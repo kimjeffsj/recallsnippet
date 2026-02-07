@@ -16,10 +16,10 @@
 
 ### 1.2 프로젝트 초기화
 
-- [ ] Tauri + React + TypeScript 프로젝트 생성
-- [ ] 디렉토리 구조 설정 (src/, src-tauri/, ./claude/skills/, ./claude/docs/)
-- [ ] Tailwind CSS 설정
-- [ ] shadcn/ui 초기화
+- [x] Tauri + React + TypeScript 프로젝트 생성
+- [x] 디렉토리 구조 설정 (src/, src-tauri/, ./claude/skills/, ./claude/docs/)
+- [x] Tailwind CSS 설정
+- [x] shadcn/ui 초기화
 
 ### 1.3 기본 설정
 
@@ -226,6 +226,7 @@
 
 | 날짜 | Phase | 완료 항목 | 메모 |
 | ---- | ----- | --------- | ---- |
-|      |       |           |      |
+| 2026-02-06 | 1.2 | 프로젝트 생성, 디렉토리 구조 | Tauri v2 + React 19 + TS 기본 템플릿 |
+| 2026-02-06 | 1.2 | Tailwind CSS v4 + shadcn/ui 설정 | @tailwindcss/vite 플러그인 방식 |
 |      |       |           |      |
 |      |       |           |      |

@@ -1,7 +1,75 @@
 # React + TypeScript 프론트엔드 가이드
 
 ## 개요
-Tauri 앱의 프론트엔드. React 18 + TypeScript + Tailwind CSS + shadcn/ui 사용.
+Tauri 앱의 프론트엔드. React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui 사용.
+
+## 초기 설정 (Tailwind CSS v4 + shadcn/ui)
+
+### 1. Tailwind CSS v4 설치
+```bash
+pnpm add tailwindcss @tailwindcss/vite
+```
+
+### 2. vite.config.ts 설정
+```typescript
+import path from "path"
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+})
+```
+
+### 3. TypeScript 경로 설정
+
+**tsconfig.json**
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+**tsconfig.app.json** (동일하게 추가)
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+### 4. CSS 파일 설정 (src/index.css)
+```css
+@import "tailwindcss";
+```
+
+> ⚠️ Tailwind v4에서는 `tailwind.config.js` 불필요. 자동 content 감지.
+
+### 5. shadcn/ui 초기화
+```bash
+pnpm add -D @types/node
+pnpm dlx shadcn@latest init
+```
+
+### 6. 컴포넌트 추가 예시
+```bash
+pnpm dlx shadcn@latest add button input dialog card
+```
 
 ## 디렉토리 구조
 ```
@@ -41,7 +109,7 @@ src/
 │   └── SnippetPage.tsx     # 스니펫 상세/편집
 ├── App.tsx
 ├── main.tsx
-└── index.css               # Tailwind 설정
+└── index.css               # Tailwind v4: @import "tailwindcss"
 ```
 
 ## Component Structure
@@ -383,25 +451,29 @@ return <Content data={data} />
 ```json
 {
   "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-opener": "^2.0.0",
     "@tanstack/react-query": "^5.0.0",
-    "zustand": "^4.5.0",
-    "react-router-dom": "^6.0.0",
+    "zustand": "^5.0.0",
+    "react-router-dom": "^7.0.0",
     "react-markdown": "^9.0.0",
     "react-syntax-highlighter": "^15.0.0",
-    "lucide-react": "^0.300.0",
+    "lucide-react": "^0.400.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0",
+    "typescript": "~5.8.0",
+    "vite": "^7.0.0",
     "@vitejs/plugin-react": "^4.0.0",
-    "tailwindcss": "^3.4.0",
-    "vitest": "^1.0.0",
-    "@testing-library/react": "^14.0.0"
+    "tailwindcss": "^4.1.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^3.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.0.0"
   }
 }
 ```

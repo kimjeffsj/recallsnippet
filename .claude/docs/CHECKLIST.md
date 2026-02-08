@@ -9,10 +9,10 @@
 
 ### 1.1 환경 설정
 
-- [ ] Node.js 18+ 설치 확인
-- [ ] Rust (rustup) 설치 확인
-- [ ] pnpm 설치 확인
-- [ ] Ollama 설치 및 실행 확인
+- [x] Node.js 18+ 설치 확인 (v22.14.0)
+- [x] Rust (rustup) 설치 확인 (1.93.0)
+- [x] pnpm 설치 확인 (10.29.1)
+- [x] Ollama 설치 및 실행 확인 (0.15.5, nomic-embed-text + qwen2.5-coder:7b)
 
 ### 1.2 프로젝트 초기화
 
@@ -23,26 +23,29 @@
 
 ### 1.3 기본 설정
 
-- [ ] ESLint + Prettier 설정
-- [ ] Vitest 설정
-- [ ] Cargo.toml 의존성 추가
-- [ ] tauri.conf.json 설정
+- [x] ESLint + Prettier 설정
+- [x] Vitest 설정
+- [x] Cargo.toml 의존성 추가 (rusqlite, tokio, reqwest, thiserror, anyhow, chrono)
+- [x] tauri.conf.json 설정 (pnpm, 앱 이름 변경)
 
 ### 1.4 데이터베이스
 
-- [ ] SQLite 연결 구현 (Rust)
-- [ ] 마이그레이션 시스템 구현
-- [ ] 초기 스키마 생성 (snippets, tags, snippet_tags, embeddings)
-- [ ] DB 연결 테스트 작성 및 통과
+- [x] SQLite 연결 구현 (Rust) - db/connection.rs
+- [x] 마이그레이션 시스템 구현 - db/migrations.rs
+- [x] 초기 스키마 생성 (snippets, tags, snippet_tags, embeddings)
+- [x] DB 연결 테스트 작성 및 통과 (5개 테스트 통과)
 
 ### 1.5 Phase 1 완료 확인
 
-- [ ] `pnpm tauri dev` 실행 시 빈 앱 창 표시
-- [ ] `cargo test` 통과
-- [ ] `pnpm test` 통과
+- [x] `pnpm tauri dev` 실행 시 빈 앱 창 표시
+- [x] `cargo test` 통과 (src-tauri 폴더에서 실행)
+- [x] `pnpm test` 통과
 
-**Phase 1 완료일**: **\*\***\_\_\_**\*\***
+**Phase 1 완료일**: 2026-02-07
 **회고/메모**:
+- npm → pnpm 전환 완료 (packageManager 필드, preinstall 스크립트)
+- Rust 의존성: rusqlite(bundled), tokio, reqwest, thiserror, anyhow, chrono, dirs
+- DB 마이그레이션 시스템 구현 완료 (5개 테스트)
 
 ---
 
@@ -228,5 +231,7 @@
 | ---- | ----- | --------- | ---- |
 | 2026-02-06 | 1.2 | 프로젝트 생성, 디렉토리 구조 | Tauri v2 + React 19 + TS 기본 템플릿 |
 | 2026-02-06 | 1.2 | Tailwind CSS v4 + shadcn/ui 설정 | @tailwindcss/vite 플러그인 방식 |
-|      |       |           |      |
-|      |       |           |      |
+| 2026-02-07 | 1.1 | 환경 설정 확인 | Node 22, Rust 1.93, pnpm 10.29, Ollama 0.15 |
+| 2026-02-07 | 1.3 | ESLint, Prettier, Vitest 설정 | npm→pnpm 전환 |
+| 2026-02-07 | 1.4 | SQLite + 마이그레이션 구현 | db/connection.rs, db/migrations.rs |
+| 2026-02-07 | 1.5 | Phase 1 완료 | 빈 앱 창 표시, 테스트 통과 |

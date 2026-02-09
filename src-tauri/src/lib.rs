@@ -34,6 +34,9 @@ pub fn run() {
             commands::list_snippets,
             commands::update_snippet,
             commands::delete_snippet,
+            commands::list_tags,
+            commands::create_tag,
+            commands::delete_tag,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

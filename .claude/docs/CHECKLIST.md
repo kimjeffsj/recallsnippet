@@ -68,11 +68,11 @@
 
 ### 2.2 백엔드 - Tag CRUD
 
-- [ ] Tag 구조체 정의
-- [ ] list_tags 커맨드 구현
-- [ ] create_tag 커맨드 구현
-- [ ] snippet_tags 연결 로직 구현
-- [ ] Tag 관련 테스트 작성 및 통과
+- [x] Tag 구조체 정의
+- [x] list_tags 커맨드 구현
+- [x] create_tag 커맨드 구현
+- [x] snippet_tags 연결 로직 구현
+- [x] Tag 관련 테스트 작성 및 통과
 
 ### 2.3 프론트엔드 - 타입 & API
 
@@ -237,3 +237,4 @@
 | 2026-02-07 | 1.4   | SQLite + 마이그레이션 구현       | db/connection.rs, db/migrations.rs          |
 | 2026-02-07 | 1.5   | Phase 1 완료                     | 빈 앱 창 표시, 테스트 통과                  |
 | 2026-02-07 | 2.1   | Snippet CRUD 백엔드 구현         | 5개 커맨드 + 14개 테스트 (총 19개 통과)      |
+| 2026-02-07 | 2.2   | Tag CRUD 백엔드 구현             | 3개 커맨드 + 8개 테스트 (총 27개 통과)       |

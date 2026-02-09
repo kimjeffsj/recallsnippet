@@ -1,3 +1,4 @@
+mod ai;
 mod commands;
 mod db;
 mod errors;
@@ -37,6 +38,8 @@ pub fn run() {
             commands::list_tags,
             commands::create_tag,
             commands::delete_tag,
+            commands::check_ollama_connection,
+            commands::list_ollama_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

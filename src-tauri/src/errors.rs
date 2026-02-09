@@ -7,6 +7,9 @@ pub enum AppError {
 
     #[error("Not found: {0}")]
     NotFound(String),
+
+    #[error("Ollama error: {0}")]
+    Ollama(String),
 }
 
 impl From<AppError> for String {

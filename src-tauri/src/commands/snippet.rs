@@ -1,6 +1,7 @@
 use tauri::State;
 use uuid::Uuid;
 
+use crate::ai::embedding;
 use crate::db::Database;
 use crate::errors::AppError;
 use crate::models::{
@@ -63,7 +64,7 @@ fn fetch_snippet_by_id(db: &Database, id: &str) -> Result<Snippet, AppError> {
 }
 
 #[tauri::command]
-pub fn create_snippet(
+pub async fn create_snippet(
     db: State<'_, Database>,
     input: CreateSnippetInput,
 ) -> Result<Snippet, String> {
@@ -95,7 +96,12 @@ pub fn create_snippet(
     })
     .map_err(|e| AppError::Database(e).to_string())?;
 
-    fetch_snippet_by_id(&db, &id).map_err(String::from)
+    let snippet = fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
+    // Best-effort embedding: silently skip if Ollama is unavailable
+    let _ = embedding::embed_snippet(&db, &snippet).await;
+
+    Ok(snippet)
 }
 
 #[tauri::command]
@@ -163,13 +169,16 @@ pub fn list_snippets(
 }
 
 #[tauri::command]
-pub fn update_snippet(
+pub async fn update_snippet(
     db: State<'_, Database>,
     id: String,
     input: UpdateSnippetInput,
 ) -> Result<Snippet, String> {
     // Verify snippet exists
     fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
+    // Check if content fields changed (triggers re-embedding)
+    let needs_reembed = input.title.is_some() || input.problem.is_some() || input.solution.is_some();
 
     db.with_connection(|conn| {
         let mut sets = vec![];
@@ -232,7 +241,14 @@ pub fn update_snippet(
     })
     .map_err(|e| AppError::Database(e).to_string())?;
 
-    fetch_snippet_by_id(&db, &id).map_err(String::from)
+    let snippet = fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
+    // Re-embed if content fields changed
+    if needs_reembed {
+        let _ = embedding::embed_snippet(&db, &snippet).await;
+    }
+
+    Ok(snippet)
 }
 
 #[tauri::command]

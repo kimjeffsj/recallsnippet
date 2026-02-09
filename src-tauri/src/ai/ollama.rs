@@ -1,7 +1,18 @@
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-const OLLAMA_BASE_URL: &str = "http://localhost:11434";
+pub const OLLAMA_BASE_URL: &str = "http://localhost:11434";
+
+#[derive(Serialize)]
+struct EmbeddingRequest {
+    model: String,
+    input: String,
+}
+
+#[derive(Deserialize)]
+struct EmbeddingResponse {
+    embeddings: Vec<Vec<f32>>,
+}
 
 #[derive(Deserialize)]
 struct OllamaTagsResponse {
@@ -51,6 +62,40 @@ pub async fn list_models() -> Result<Vec<String>, String> {
     Ok(tags_response.models.into_iter().map(|m| m.name).collect())
 }
 
+/// Create an embedding vector for the given text
+pub async fn create_embedding(text: &str, model: &str) -> Result<Vec<f32>, String> {
+    let client = Client::new();
+
+    let response = client
+        .post(format!("{}/api/embed", OLLAMA_BASE_URL))
+        .json(&EmbeddingRequest {
+            model: model.to_string(),
+            input: text.to_string(),
+        })
+        .timeout(std::time::Duration::from_secs(30))
+        .send()
+        .await
+        .map_err(|e| format!("Ollama embedding request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "Ollama embedding returned status: {}",
+            response.status()
+        ));
+    }
+
+    let emb_response: EmbeddingResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse embedding response: {}", e))?;
+
+    emb_response
+        .embeddings
+        .into_iter()
+        .next()
+        .ok_or_else(|| "No embedding returned".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,5 +128,61 @@ mod tests {
 
         let models = list_models().await.unwrap();
         assert!(!models.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_create_embedding() {
+        let connected = check_connection().await.unwrap_or(false);
+        if !connected {
+            eprintln!("Skipping test: Ollama not running");
+            return;
+        }
+
+        let text = "Docker container networking issue";
+        let embedding = create_embedding(text, "nomic-embed-text").await.unwrap();
+
+        // nomic-embed-text produces 768-dimensional embeddings
+        assert_eq!(embedding.len(), 768);
+        assert!(embedding.iter().all(|&v| v.is_finite()));
+    }
+
+    #[tokio::test]
+    async fn test_similar_texts_have_higher_similarity() {
+        let connected = check_connection().await.unwrap_or(false);
+        if !connected {
+            eprintln!("Skipping test: Ollama not running");
+            return;
+        }
+
+        let emb1 = create_embedding("How to fix Docker network issue", "nomic-embed-text")
+            .await
+            .unwrap();
+        let emb2 = create_embedding("Docker container networking problem", "nomic-embed-text")
+            .await
+            .unwrap();
+        let emb3 = create_embedding("Best pizza recipes for dinner", "nomic-embed-text")
+            .await
+            .unwrap();
+
+        let sim_1_2 = cosine_similarity(&emb1, &emb2);
+        let sim_1_3 = cosine_similarity(&emb1, &emb3);
+
+        // Similar texts should have higher cosine similarity
+        assert!(
+            sim_1_2 > sim_1_3,
+            "Expected sim(docker, docker) > sim(docker, pizza): {} vs {}",
+            sim_1_2,
+            sim_1_3
+        );
+    }
+
+    fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
+        let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
+        let mag_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+        let mag_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if mag_a == 0.0 || mag_b == 0.0 {
+            return 0.0;
+        }
+        dot / (mag_a * mag_b)
     }
 }

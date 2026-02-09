@@ -62,3 +62,10 @@ pub struct SnippetFilter {
     pub language: Option<String>,
     pub search: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchResult {
+    pub snippet: SnippetSummary,
+    pub score: f64,
+}

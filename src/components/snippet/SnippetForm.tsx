@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Sparkles, Loader2 } from "lucide-react";
+import { useGenerateSolution, useSuggestTags, useOllamaStatus } from "@/hooks/useAI";
 import type { Snippet, CreateSnippetInput, Tag } from "@/lib/types";
 
 interface SnippetFormProps {
@@ -35,6 +36,11 @@ export function SnippetForm({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
     snippet?.tags.map((t) => t.id) ?? [],
   );
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const { data: ollamaConnected = false } = useOllamaStatus();
+  const generateSolution = useGenerateSolution();
+  const suggestTags = useSuggestTags();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,13 +63,60 @@ export function SnippetForm({
     );
   };
 
+  const handleGenerateSolution = () => {
+    if (!problem.trim()) return;
+    setAiError(null);
+    generateSolution.mutate(problem.trim(), {
+      onSuccess: (generated) => {
+        setSolution(generated);
+      },
+      onError: () => {
+        setAiError("Failed to generate solution. Is Ollama running?");
+      },
+    });
+  };
+
+  const handleSuggestTags = () => {
+    const content = `${title} ${problem} ${solution}`.trim();
+    if (!content) return;
+    setAiError(null);
+    suggestTags.mutate(content, {
+      onSuccess: (suggested) => {
+        // Match suggested tag names with available tags
+        const matchedIds = availableTags
+          .filter((tag) =>
+            suggested.some(
+              (s) => s.toLowerCase() === tag.name.toLowerCase(),
+            ),
+          )
+          .map((tag) => tag.id);
+        if (matchedIds.length > 0) {
+          setSelectedTagIds((prev) => [
+            ...new Set([...prev, ...matchedIds]),
+          ]);
+        }
+      },
+      onError: () => {
+        setAiError("Failed to suggest tags. Is Ollama running?");
+      },
+    });
+  };
+
   const isValid = title.trim().length > 0 && problem.trim().length > 0;
+  const isGenerating = generateSolution.isPending;
+  const isSuggesting = suggestTags.isPending;
 
   return (
     <form onSubmit={handleSubmit} className="p-6 max-w-3xl mx-auto space-y-4">
       <h2 className="text-xl font-bold">
         {snippet ? "Edit Snippet" : "New Snippet"}
       </h2>
+
+      {aiError && (
+        <div className="text-sm text-destructive bg-destructive/10 rounded-md p-3" role="alert">
+          {aiError}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="title">Title *</Label>
@@ -89,7 +142,26 @@ export function SnippetForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="solution">Solution</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="solution">Solution</Label>
+          {ollamaConnected && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateSolution}
+              disabled={isGenerating || !problem.trim()}
+              aria-label="Generate solution with AI"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3 mr-1" />
+              )}
+              {isGenerating ? "Generating..." : "AI Help"}
+            </Button>
+          )}
+        </div>
         <Textarea
           id="solution"
           value={solution}
@@ -133,7 +205,26 @@ export function SnippetForm({
 
       {availableTags.length > 0 && (
         <div className="space-y-2">
-          <Label>Tags</Label>
+          <div className="flex items-center justify-between">
+            <Label>Tags</Label>
+            {ollamaConnected && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSuggestTags}
+                disabled={isSuggesting || (!title.trim() && !problem.trim())}
+                aria-label="Suggest tags with AI"
+              >
+                {isSuggesting ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3 mr-1" />
+                )}
+                {isSuggesting ? "Suggesting..." : "AI Tags"}
+              </Button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => {
               const isSelected = selectedTagIds.includes(tag.id);

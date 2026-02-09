@@ -1,22 +1,46 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
+import type { ReactNode } from "react";
 import { SnippetForm } from "./SnippetForm";
 import type { Tag, Snippet } from "@/lib/types";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(() => Promise.resolve(false)),
+}));
 
 const mockTags: Tag[] = [
   { id: "t1", name: "rust" },
   { id: "t2", name: "async" },
 ];
 
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
+function renderForm(props: Partial<React.ComponentProps<typeof SnippetForm>> = {}) {
+  return render(
+    <SnippetForm
+      availableTags={mockTags}
+      onSubmit={() => {}}
+      onCancel={() => {}}
+      {...props}
+    />,
+    { wrapper: createWrapper() },
+  );
+}
+
 describe("SnippetForm", () => {
   it("renders create form", () => {
-    render(
-      <SnippetForm
-        availableTags={mockTags}
-        onSubmit={() => {}}
-        onCancel={() => {}}
-      />,
-    );
+    renderForm();
 
     expect(screen.getByText("New Snippet")).toBeInTheDocument();
     expect(screen.getByLabelText("Title *")).toBeInTheDocument();
@@ -37,14 +61,7 @@ describe("SnippetForm", () => {
       updatedAt: "2026-02-07",
     };
 
-    render(
-      <SnippetForm
-        snippet={snippet}
-        availableTags={mockTags}
-        onSubmit={() => {}}
-        onCancel={() => {}}
-      />,
-    );
+    renderForm({ snippet });
 
     expect(screen.getByText("Edit Snippet")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Existing Title")).toBeInTheDocument();
@@ -52,13 +69,7 @@ describe("SnippetForm", () => {
   });
 
   it("submit button is disabled when required fields empty", () => {
-    render(
-      <SnippetForm
-        availableTags={[]}
-        onSubmit={() => {}}
-        onCancel={() => {}}
-      />,
-    );
+    renderForm({ availableTags: [] });
 
     const submitButton = screen.getByText("Create");
     expect(submitButton).toBeDisabled();
@@ -66,13 +77,7 @@ describe("SnippetForm", () => {
 
   it("calls onSubmit with form data", () => {
     const handleSubmit = vi.fn();
-    render(
-      <SnippetForm
-        availableTags={mockTags}
-        onSubmit={handleSubmit}
-        onCancel={() => {}}
-      />,
-    );
+    renderForm({ onSubmit: handleSubmit });
 
     fireEvent.change(screen.getByLabelText("Title *"), {
       target: { value: "Test Title" },
@@ -95,13 +100,7 @@ describe("SnippetForm", () => {
 
   it("calls onCancel when cancel clicked", () => {
     const handleCancel = vi.fn();
-    render(
-      <SnippetForm
-        availableTags={[]}
-        onSubmit={() => {}}
-        onCancel={handleCancel}
-      />,
-    );
+    renderForm({ onCancel: handleCancel });
 
     fireEvent.click(screen.getByText("Cancel"));
     expect(handleCancel).toHaveBeenCalled();
@@ -109,13 +108,7 @@ describe("SnippetForm", () => {
 
   it("toggles tag selection", () => {
     const handleSubmit = vi.fn();
-    render(
-      <SnippetForm
-        availableTags={mockTags}
-        onSubmit={handleSubmit}
-        onCancel={() => {}}
-      />,
-    );
+    renderForm({ onSubmit: handleSubmit });
 
     // Fill required fields
     fireEvent.change(screen.getByLabelText("Title *"), {
@@ -139,14 +132,7 @@ describe("SnippetForm", () => {
   });
 
   it("shows loading state", () => {
-    render(
-      <SnippetForm
-        availableTags={[]}
-        onSubmit={() => {}}
-        onCancel={() => {}}
-        isLoading={true}
-      />,
-    );
+    renderForm({ availableTags: [], isLoading: true });
 
     expect(screen.getByText("Saving...")).toBeInTheDocument();
   });

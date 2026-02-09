@@ -121,7 +121,7 @@ pnpm tauri build        # 프로덕션 빌드
 
 - [x] Phase 1: 프로젝트 셋업
 - [x] Phase 2: CRUD 기능
-- [ ] Phase 3: AI 통합
+- [x] Phase 3: AI 통합
 - [ ] Phase 4: 마무리
 
 ## 빠른 참조

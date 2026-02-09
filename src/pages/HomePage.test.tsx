@@ -77,6 +77,7 @@ describe("HomePage", () => {
         return Promise.resolve({ ...mockSnippet, id: "s3" });
       if (cmd === "update_snippet") return Promise.resolve(mockSnippet);
       if (cmd === "delete_snippet") return Promise.resolve(undefined);
+      if (cmd === "check_ollama_connection") return Promise.resolve(false);
       return Promise.resolve(undefined);
     });
   });

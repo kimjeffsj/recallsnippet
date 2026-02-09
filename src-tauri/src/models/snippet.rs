@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Snippet {
     pub id: String,
     pub title: String,
@@ -21,6 +22,7 @@ pub struct Tag {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SnippetSummary {
     pub id: String,
     pub title: String,
@@ -31,6 +33,7 @@ pub struct SnippetSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateSnippetInput {
     pub title: String,
     pub problem: String,
@@ -42,6 +45,7 @@ pub struct CreateSnippetInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateSnippetInput {
     pub title: Option<String>,
     pub problem: Option<String>,
@@ -53,6 +57,7 @@ pub struct UpdateSnippetInput {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SnippetFilter {
     pub language: Option<String>,
     pub search: Option<String>,

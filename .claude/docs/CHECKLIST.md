@@ -76,11 +76,11 @@
 
 ### 2.3 프론트엔드 - 타입 & API
 
-- [ ] lib/types.ts 타입 정의
-- [ ] lib/tauri.ts API 래퍼 구현
-- [ ] TanStack Query 설정
-- [ ] useSnippets 훅 구현
-- [ ] useSnippets 테스트 작성 및 통과
+- [x] lib/types.ts 타입 정의
+- [x] lib/tauri.ts API 래퍼 구현
+- [x] TanStack Query 설정
+- [x] useSnippets 훅 구현
+- [x] useSnippets 테스트 작성 및 통과
 
 ### 2.4 프론트엔드 - 컴포넌트
 
@@ -238,3 +238,4 @@
 | 2026-02-07 | 1.5   | Phase 1 완료                     | 빈 앱 창 표시, 테스트 통과                  |
 | 2026-02-07 | 2.1   | Snippet CRUD 백엔드 구현         | 5개 커맨드 + 14개 테스트 (총 19개 통과)      |
 | 2026-02-07 | 2.2   | Tag CRUD 백엔드 구현             | 3개 커맨드 + 8개 테스트 (총 27개 통과)       |
+| 2026-02-09 | 2.3   | 프론트엔드 타입 & API            | types, tauri API, hooks, 8개 훅 테스트 통과  |

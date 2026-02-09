@@ -41,6 +41,8 @@ pub fn run() {
             commands::check_ollama_connection,
             commands::list_ollama_models,
             commands::semantic_search,
+            commands::generate_solution,
+            commands::suggest_tags,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

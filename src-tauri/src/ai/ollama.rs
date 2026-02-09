@@ -62,6 +62,49 @@ pub async fn list_models() -> Result<Vec<String>, String> {
     Ok(tags_response.models.into_iter().map(|m| m.name).collect())
 }
 
+#[derive(Serialize)]
+struct GenerateRequest {
+    model: String,
+    prompt: String,
+    stream: bool,
+}
+
+#[derive(Deserialize)]
+struct GenerateResponse {
+    response: String,
+}
+
+/// Generate text using Ollama LLM
+pub async fn generate(prompt: &str, model: &str) -> Result<String, String> {
+    let client = Client::new();
+
+    let response = client
+        .post(format!("{}/api/generate", OLLAMA_BASE_URL))
+        .json(&GenerateRequest {
+            model: model.to_string(),
+            prompt: prompt.to_string(),
+            stream: false,
+        })
+        .timeout(std::time::Duration::from_secs(120))
+        .send()
+        .await
+        .map_err(|e| format!("Ollama generation failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "Ollama generation returned status: {}",
+            response.status()
+        ));
+    }
+
+    let gen_response: GenerateResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse generation response: {}", e))?;
+
+    Ok(gen_response.response)
+}
+
 /// Create an embedding vector for the given text
 pub async fn create_embedding(text: &str, model: &str) -> Result<Vec<f32>, String> {
     let client = Client::new();

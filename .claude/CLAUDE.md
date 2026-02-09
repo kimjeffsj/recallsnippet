@@ -19,6 +19,7 @@ src-tauri/            # Rust 백엔드
 ./claude/skills/               # Claude Code 가이드 (아래 참조)
 ./claude/docs/PRD.md           # 제품 요구사항 문서
 ./claude/docs/CHECKLIST.md          # 개발 진행 체크리스트 ⭐
+./claude/docs/implementation-notes/  # 구현 노트 (아래 규칙 참조)
 ```
 
 ---
@@ -38,7 +39,9 @@ src-tauri/            # Rust 백엔드
 
 ### 3. 단계/Phase 완료 시 설명 제공
 
-각 단계 또는 Phase 구현 완료 후, 반드시 아래 내용을 사용자에게 설명:
+각 단계 또는 Phase 구현 완료 후, 반드시 아래 두 가지를 수행:
+
+#### A. 사용자에게 구현 설명 출력
 
 ```
 ## 구현 설명
@@ -56,27 +59,19 @@ src-tauri/            # Rust 백엔드
 - [다른 방식으로 구현할 수 있었던 옵션] (선택)
 ```
 
-**예시:**
+#### B. 구현 노트 파일 저장
 
-```
-## 구현 설명: Snippet CRUD
+`./claude/docs/implementation-notes/` 폴더에 마크다운 파일 생성:
 
-### 왜 이렇게 구성했는가?
-- Repository 패턴 대신 직접 SQL 쿼리 사용
-- 프로젝트 규모가 작아 추상화 레이어 불필요
-
-### 장점
-- 코드가 단순하고 직관적
-- 디버깅이 쉬움
-- 성능 오버헤드 없음
-
-### 단점 / 트레이드오프
-- 테스트 시 실제 DB 필요 (모킹 어려움)
-- 쿼리 로직이 여러 곳에 분산될 수 있음
-
-### 대안
-- SQLx + Repository 패턴 (더 큰 프로젝트에 적합)
-```
+- **파일명 규칙**: `YYYY-MM-DD_phase-X-Y_간단한-설명.md`
+  - 예: `2026-02-07_phase-2-1_snippet-crud-backend.md`
+- **필수 포함 내용**:
+  - 날짜, Phase, 범위
+  - 변경된 파일 목록
+  - 테스트 결과
+  - 구현 설명 (왜, 장점, 단점, 대안)
+  - 아키텍처 결정 기록 (해당 시)
+- **목적**: 이전 구현 맥락을 다음 세션에서 참조할 수 있도록 기록
 
 ---
 
@@ -105,20 +100,21 @@ pnpm tauri build        # 프로덕션 빌드
 3. **작은 단위**: 한 번에 하나의 기능만
 4. **타입 안전**: 명시적 타입 정의
 5. **로컬 only**: 외부 API 호출 금지
-6. **설명 필수**: 단계 완료 시 구현 이유와 장단점 설명
+6. **설명 필수**: 단계 완료 시 구현 이유와 장단점 설명 (사용자에게 출력 + 구현 노트 파일 저장)
 
 ## 현재 진행 상황
 
 > `CHECKLIST.md` 참조
 
-- [ ] Phase 1: 프로젝트 셋업
-- [ ] Phase 2: CRUD 기능
+- [x] Phase 1: 프로젝트 셋업
+- [ ] Phase 2: CRUD 기능 (2.1 완료)
 - [ ] Phase 3: AI 통합
 - [ ] Phase 4: 마무리
 
 ## 빠른 참조
 
 - **체크리스트**: `CHECKLIST.md` ⭐
+- **구현 노트**: `docs/implementation-notes/` (이전 구현 맥락 참조)
 - PRD: `docs/PRD.md`
 - DB 스키마: `skills/tauri-rust.md#database-schema`
 - API 정의: `skills/tauri-rust.md#tauri-commands`

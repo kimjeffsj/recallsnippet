@@ -43,6 +43,7 @@
 
 **Phase 1 완료일**: 2026-02-07
 **회고/메모**:
+
 - npm → pnpm 전환 완료 (packageManager 필드, preinstall 스크립트)
 - Rust 의존성: rusqlite(bundled), tokio, reqwest, thiserror, anyhow, chrono, dirs
 - DB 마이그레이션 시스템 구현 완료 (5개 테스트)
@@ -53,17 +54,17 @@
 
 ### 2.1 백엔드 - Snippet CRUD
 
-- [ ] CreateSnippetInput 구조체 정의
-- [ ] create_snippet 커맨드 구현
-- [ ] create_snippet 테스트 작성 및 통과
-- [ ] get_snippet 커맨드 구현
-- [ ] get_snippet 테스트 작성 및 통과
-- [ ] list_snippets 커맨드 구현
-- [ ] list_snippets 테스트 작성 및 통과
-- [ ] update_snippet 커맨드 구현
-- [ ] update_snippet 테스트 작성 및 통과
-- [ ] delete_snippet 커맨드 구현
-- [ ] delete_snippet 테스트 작성 및 통과
+- [x] CreateSnippetInput 구조체 정의
+- [x] create_snippet 커맨드 구현
+- [x] create_snippet 테스트 작성 및 통과
+- [x] get_snippet 커맨드 구현
+- [x] get_snippet 테스트 작성 및 통과
+- [x] list_snippets 커맨드 구현
+- [x] list_snippets 테스트 작성 및 통과
+- [x] update_snippet 커맨드 구현
+- [x] update_snippet 테스트 작성 및 통과
+- [x] delete_snippet 커맨드 구현
+- [x] delete_snippet 테스트 작성 및 통과
 
 ### 2.2 백엔드 - Tag CRUD
 
@@ -227,11 +228,12 @@
 
 ## 진행 기록
 
-| 날짜 | Phase | 완료 항목 | 메모 |
-| ---- | ----- | --------- | ---- |
-| 2026-02-06 | 1.2 | 프로젝트 생성, 디렉토리 구조 | Tauri v2 + React 19 + TS 기본 템플릿 |
-| 2026-02-06 | 1.2 | Tailwind CSS v4 + shadcn/ui 설정 | @tailwindcss/vite 플러그인 방식 |
-| 2026-02-07 | 1.1 | 환경 설정 확인 | Node 22, Rust 1.93, pnpm 10.29, Ollama 0.15 |
-| 2026-02-07 | 1.3 | ESLint, Prettier, Vitest 설정 | npm→pnpm 전환 |
-| 2026-02-07 | 1.4 | SQLite + 마이그레이션 구현 | db/connection.rs, db/migrations.rs |
-| 2026-02-07 | 1.5 | Phase 1 완료 | 빈 앱 창 표시, 테스트 통과 |
+| 날짜       | Phase | 완료 항목                        | 메모                                        |
+| ---------- | ----- | -------------------------------- | ------------------------------------------- |
+| 2026-02-06 | 1.2   | 프로젝트 생성, 디렉토리 구조     | Tauri v2 + React 19 + TS 기본 템플릿        |
+| 2026-02-06 | 1.2   | Tailwind CSS v4 + shadcn/ui 설정 | @tailwindcss/vite 플러그인 방식             |
+| 2026-02-07 | 1.1   | 환경 설정 확인                   | Node 22, Rust 1.93, pnpm 10.29, Ollama 0.15 |
+| 2026-02-07 | 1.3   | ESLint, Prettier, Vitest 설정    | npm→pnpm 전환                               |
+| 2026-02-07 | 1.4   | SQLite + 마이그레이션 구현       | db/connection.rs, db/migrations.rs          |
+| 2026-02-07 | 1.5   | Phase 1 완료                     | 빈 앱 창 표시, 테스트 통과                  |
+| 2026-02-07 | 2.1   | Snippet CRUD 백엔드 구현         | 5개 커맨드 + 14개 테스트 (총 19개 통과)      |

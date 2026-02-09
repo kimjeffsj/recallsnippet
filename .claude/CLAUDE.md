@@ -59,7 +59,20 @@ src-tauri/            # Rust 백엔드
 - [다른 방식으로 구현할 수 있었던 옵션] (선택)
 ```
 
-#### B. 구현 노트 파일 저장
+#### B. 커밋 메시지 추천
+
+단계 또는 Phase 구현 완료 후, 사용자에게 커밋 메시지를 추천:
+
+- **형식**: Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`)
+- **언어**: 영어
+- **예시**:
+  ```
+  feat: add snippet CRUD backend with 14 tests
+  feat: implement frontend components (SnippetCard, SnippetList, SnippetForm, SnippetDetail, CodeBlock)
+  ```
+- 사용자가 승인하면 커밋 진행, 아니면 수정 후 재추천
+
+#### C. 구현 노트 파일 저장
 
 `./claude/docs/implementation-notes/` 폴더에 마크다운 파일 생성:
 
@@ -107,7 +120,7 @@ pnpm tauri build        # 프로덕션 빌드
 > `CHECKLIST.md` 참조
 
 - [x] Phase 1: 프로젝트 셋업
-- [ ] Phase 2: CRUD 기능 (2.1 완료)
+- [x] Phase 2: CRUD 기능
 - [ ] Phase 3: AI 통합
 - [ ] Phase 4: 마무리
 

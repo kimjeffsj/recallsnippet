@@ -84,12 +84,12 @@
 
 ### 2.4 프론트엔드 - 컴포넌트
 
-- [ ] MainLayout 컴포넌트
-- [ ] SnippetCard 컴포넌트 + 테스트
-- [ ] SnippetList 컴포넌트 + 테스트
-- [ ] SnippetForm 컴포넌트 + 테스트
-- [ ] SnippetDetail 컴포넌트 + 테스트
-- [ ] CodeBlock (syntax highlighting) 컴포넌트
+- [x] MainLayout 컴포넌트
+- [x] SnippetCard 컴포넌트 + 테스트
+- [x] SnippetList 컴포넌트 + 테스트
+- [x] SnippetForm 컴포넌트 + 테스트
+- [x] SnippetDetail 컴포넌트 + 테스트
+- [x] CodeBlock (syntax highlighting) 컴포넌트
 
 ### 2.5 프론트엔드 - 페이지 통합
 
@@ -239,3 +239,4 @@
 | 2026-02-07 | 2.1   | Snippet CRUD 백엔드 구현         | 5개 커맨드 + 14개 테스트 (총 19개 통과)      |
 | 2026-02-07 | 2.2   | Tag CRUD 백엔드 구현             | 3개 커맨드 + 8개 테스트 (총 27개 통과)       |
 | 2026-02-09 | 2.3   | 프론트엔드 타입 & API            | types, tauri API, hooks, 8개 훅 테스트 통과  |
+| 2026-02-09 | 2.4   | 프론트엔드 컴포넌트              | 6개 컴포넌트 + 25개 테스트 (총 34개 통과)    |

@@ -3,6 +3,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { SnippetList } from "@/components/snippet/SnippetList";
 import { SnippetDetail } from "@/components/snippet/SnippetDetail";
 import { SnippetForm } from "@/components/snippet/SnippetForm";
+import { SearchBar } from "@/components/search/SearchBar";
+import { SearchResults } from "@/components/search/SearchResults";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +15,7 @@ import {
   useDeleteSnippet,
 } from "@/hooks/useSnippets";
 import { useTags } from "@/hooks/useTags";
+import { useSemanticSearch } from "@/hooks/useSearch";
 import { Plus } from "lucide-react";
 import type { CreateSnippetInput } from "@/lib/types";
 
@@ -22,12 +25,20 @@ export function HomePage() {
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filterLanguage, setFilterLanguage] = useState<string | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
     filterLanguage ? { language: filterLanguage } : undefined,
   );
   const { data: selectedSnippet } = useSnippet(selectedId);
   const { data: tags = [] } = useTags();
+  const {
+    data: searchResults = [],
+    isLoading: searchLoading,
+    isError: searchError,
+  } = useSemanticSearch(searchQuery);
+
+  const isSearching = searchQuery.length > 2;
 
   const createMutation = useCreateSnippet();
   const updateMutation = useUpdateSnippet();
@@ -96,6 +107,8 @@ export function HomePage() {
         <Plus className="h-4 w-4 mr-2" />
         New Snippet
       </Button>
+
+      <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
       {languages.length > 0 && (
         <div className="space-y-2">
@@ -188,6 +201,27 @@ export function HomePage() {
         );
 
       default:
+        if (isSearching) {
+          if (searchError) {
+            return (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center space-y-2">
+                  <p>AI search requires Ollama to be running.</p>
+                  <p className="text-xs">
+                    Run <code className="bg-muted px-1 py-0.5 rounded">ollama serve</code> to enable semantic search.
+                  </p>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <SearchResults
+              results={searchResults}
+              onSelect={handleSelect}
+              isLoading={searchLoading}
+            />
+          );
+        }
         return (
           <SnippetList
             snippets={snippets}

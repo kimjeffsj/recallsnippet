@@ -6,6 +6,7 @@ import type {
   UpdateSnippetInput,
   SnippetFilter,
   Tag,
+  SearchResult,
 } from "./types";
 
 export const snippetApi = {
@@ -21,6 +22,23 @@ export const snippetApi = {
     invoke<Snippet>("update_snippet", { id, input }),
 
   delete: (id: string) => invoke<void>("delete_snippet", { id }),
+};
+
+export const searchApi = {
+  semantic: (query: string, limit?: number) =>
+    invoke<SearchResult[]>("semantic_search", { query, limit }),
+};
+
+export const aiApi = {
+  checkConnection: () => invoke<boolean>("check_ollama_connection"),
+
+  listModels: () => invoke<string[]>("list_ollama_models"),
+
+  generateSolution: (problem: string, model?: string) =>
+    invoke<string>("generate_solution", { problem, model }),
+
+  suggestTags: (content: string, model?: string) =>
+    invoke<string[]>("suggest_tags", { content, model }),
 };
 
 export const tagApi = {

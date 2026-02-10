@@ -313,3 +313,6 @@
 | 2026-02-09 | 4.1.4 | SettingsDialog 컴포넌트          | Appearance/AI/Storage 3섹션 다이얼로그       |
 | 2026-02-09 | 4.2.1 | 레이아웃 재구성                  | AppContext, AppHeader, AppSidebar, MainLayout|
 | 2026-02-09 | 4.2.2 | SnippetCard 모델 확장            | code_preview 필드 추가 (Rust/TS), 언어색상맵 |
+| 2026-02-09 | 4.2.2-3 | SnippetCard + SnippetList       | 카드형 디자인 + grid 레이아웃 + 스켈레톤     |
+| 2026-02-09 | 4.2.4-8 | Detail/Form/CodeBlock 리디자인  | 2-column, 헤더바, 키보드 단축키, 상태 컴포넌트|
+| 2026-02-09 | 4.2.9 | 테스트 업데이트                   | 16개 신규 테스트 (총 129개: Rust 55 + Front 74)|

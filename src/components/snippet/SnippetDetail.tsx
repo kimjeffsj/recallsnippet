@@ -18,8 +18,7 @@ import {
   Trash2,
   ExternalLink,
   Clock,
-  Sparkles,
-  MessageSquare,
+  Search,
 } from "lucide-react";
 import type { Snippet } from "@/lib/types";
 
@@ -28,7 +27,7 @@ interface SnippetDetailProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onBack?: () => void;
-  onAskAI?: () => void;
+  onFindRelated?: () => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -48,7 +47,7 @@ export function SnippetDetail({
   onEdit,
   onDelete,
   onBack,
-  onAskAI,
+  onFindRelated,
 }: SnippetDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const langInfo = getLanguageInfo(snippet.codeLanguage);
@@ -176,29 +175,29 @@ export function SnippetDetail({
             </section>
           )}
 
-          {/* AI Action Bar */}
+          {/* Find Related Bar */}
           <div className="bg-muted border border-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                <Sparkles className="h-5 w-5" />
+                <Search className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
-                  Recall Assistant
+                  Find Related
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Ask AI about this snippet using your knowledge base.
+                  Search for similar snippets in your knowledge base.
                 </p>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={onAskAI}
+              onClick={onFindRelated}
               className="gap-1.5"
             >
-              <MessageSquare className="h-3.5 w-3.5" />
-              Ask AI
+              <Search className="h-3.5 w-3.5" />
+              Find Related
             </Button>
           </div>
         </div>

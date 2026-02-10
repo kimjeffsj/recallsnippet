@@ -5,7 +5,6 @@ import { SnippetDetail } from "@/components/snippet/SnippetDetail";
 import { SnippetForm } from "@/components/snippet/SnippetForm";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SpotlightChat } from "@/components/ai/SpotlightChat";
-import type { SnippetContext } from "@/components/ai/SpotlightChat";
 import {
   useSnippets,
   useSnippet,
@@ -27,7 +26,7 @@ function HomeContent() {
   const { view, selectedId, searchQuery, filterLanguage } = useAppState();
   const dispatch = useAppDispatch();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const [spotlightContext, setSpotlightContext] = useState<SnippetContext | undefined>();
+  const [spotlightQuery, setSpotlightQuery] = useState<string | undefined>();
 
   const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
     filterLanguage ? { language: filterLanguage } : undefined,
@@ -78,8 +77,8 @@ function HomeContent() {
     });
   };
 
-  const openSpotlight = useCallback((context?: SnippetContext) => {
-    setSpotlightContext(context);
+  const openSpotlight = useCallback((initialQuery?: string) => {
+    setSpotlightQuery(initialQuery);
     setSpotlightOpen(true);
   }, []);
 
@@ -145,14 +144,7 @@ function HomeContent() {
             onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
             onBack={handleBack}
-            onAskAI={() =>
-              openSpotlight({
-                title: selectedSnippet.title,
-                problem: selectedSnippet.problem,
-                solution: selectedSnippet.solution ?? undefined,
-                code: selectedSnippet.code ?? undefined,
-              })
-            }
+            onFindRelated={() => openSpotlight(selectedSnippet.title)}
           />
         );
 
@@ -199,7 +191,8 @@ function HomeContent() {
       <SpotlightChat
         open={spotlightOpen}
         onOpenChange={setSpotlightOpen}
-        snippetContext={spotlightContext}
+        onSelectSnippet={handleSelect}
+        initialQuery={spotlightQuery}
       />
     </>
   );

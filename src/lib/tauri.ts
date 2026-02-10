@@ -42,8 +42,6 @@ export const aiApi = {
   suggestTags: (content: string, model?: string) =>
     invoke<string[]>("suggest_tags", { content, model }),
 
-  chat: (message: string, snippetContext?: { title: string; problem: string; solution?: string; code?: string }) =>
-    invoke<string>("ai_chat", { message, snippetContext }),
 };
 
 export const tagApi = {

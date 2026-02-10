@@ -22,19 +22,3 @@ export function useSuggestTags() {
   });
 }
 
-interface AIChatParams {
-  message: string;
-  snippetContext?: {
-    title: string;
-    problem: string;
-    solution?: string;
-    code?: string;
-  };
-}
-
-export function useAIChat() {
-  return useMutation({
-    mutationFn: ({ message, snippetContext }: AIChatParams) =>
-      aiApi.chat(message, snippetContext),
-  });
-}

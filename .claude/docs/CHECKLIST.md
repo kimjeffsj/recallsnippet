@@ -247,7 +247,7 @@
 
 #### 4.2.9 테스트 업데이트
 - [x] 기존 테스트 업데이트 (SnippetCard, SnippetList, SnippetForm, HomePage, SearchResults, useSnippets)
-- [ ] 새 테스트 (AppHeader, AppSidebar, EmptyState 등)
+- [x] 새 테스트 (AppHeader 5개, AppSidebar 3개, EmptyState 4개, ErrorState 4개)
 
 ### 4.3 크로스 플랫폼 빌드
 

@@ -66,7 +66,6 @@ function HomeContent() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to delete this snippet?")) return;
     deleteMutation.mutate(id, {
       onSuccess: () => {
         dispatch({ type: "DESELECT_SNIPPET" });

@@ -1,4 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CodeBlock } from "./CodeBlock";
 import { getLanguageInfo } from "@/lib/language-colors";
 import {
@@ -36,6 +47,7 @@ export function SnippetDetail({
   onDelete,
   onBack,
 }: SnippetDetailProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const langInfo = getLanguageInfo(snippet.codeLanguage);
 
   return (
@@ -79,7 +91,7 @@ export function SnippetDetail({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(snippet.id)}
+            onClick={() => setDeleteDialogOpen(true)}
             aria-label="Delete snippet"
             className="text-muted-foreground hover:text-destructive"
           >
@@ -231,6 +243,28 @@ export function SnippetDetail({
           )}
         </aside>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete snippet?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{snippet.title}". This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(snippet.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -184,9 +184,6 @@ describe("HomePage", () => {
   });
 
   it("deletes a snippet from detail view", async () => {
-    // Mock window.confirm
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     renderHomePage();
 
     await waitFor(() => {
@@ -200,8 +197,14 @@ describe("HomePage", () => {
       expect(screen.getByLabelText("Delete snippet")).toBeInTheDocument();
     });
 
-    // Click delete
+    // Click delete icon to open confirmation dialog
     fireEvent.click(screen.getByLabelText("Delete snippet"));
+
+    // Confirm in the AlertDialog
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith("delete_snippet", { id: "s1" });

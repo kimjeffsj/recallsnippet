@@ -87,7 +87,7 @@ describe("SnippetDetail", () => {
     expect(handleEdit).toHaveBeenCalledWith("s1");
   });
 
-  it("calls onDelete when delete button clicked", () => {
+  it("calls onDelete after confirming delete dialog", () => {
     const handleDelete = vi.fn();
     render(
       <SnippetDetail
@@ -97,7 +97,12 @@ describe("SnippetDetail", () => {
       />,
     );
 
+    // Click trash icon opens the dialog
     fireEvent.click(screen.getByLabelText("Delete snippet"));
+    expect(handleDelete).not.toHaveBeenCalled();
+
+    // Confirm in the dialog
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(handleDelete).toHaveBeenCalledWith("s1");
   });
 

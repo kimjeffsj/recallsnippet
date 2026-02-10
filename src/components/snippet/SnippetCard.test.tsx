@@ -8,6 +8,7 @@ const mockSnippet: SnippetSummary = {
   title: "Fix async/await error",
   problem: "Getting unhandled promise rejection when using async/await",
   codeLanguage: "typescript",
+  codePreview: 'const result = await fetchData();',
   tags: [
     { id: "t1", name: "async" },
     { id: "t2", name: "error-handling" },
@@ -29,21 +30,29 @@ describe("SnippetCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders language badge", () => {
+  it("renders language badge with abbreviation", () => {
     render(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
-    expect(screen.getByText("typescript")).toBeInTheDocument();
+    expect(screen.getByText("TS")).toBeInTheDocument();
   });
 
-  it("renders tag badges", () => {
+  it("renders tag badges with hash prefix", () => {
     render(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
-    expect(screen.getByText("async")).toBeInTheDocument();
-    expect(screen.getByText("error-handling")).toBeInTheDocument();
+    expect(screen.getByText("#async")).toBeInTheDocument();
+    expect(screen.getByText("#error-handling")).toBeInTheDocument();
+  });
+
+  it("renders code preview", () => {
+    render(
+      <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
+    );
+
+    expect(screen.getByText("const result = await fetchData();")).toBeInTheDocument();
   });
 
   it("calls onClick with snippet id", () => {
@@ -69,7 +78,7 @@ describe("SnippetCard", () => {
     expect(button.className).toContain("border-primary");
   });
 
-  it("renders without language when codeLanguage is null", () => {
+  it("renders fallback badge when codeLanguage is null", () => {
     const snippetNoLang: SnippetSummary = {
       ...mockSnippet,
       codeLanguage: null,
@@ -78,7 +87,17 @@ describe("SnippetCard", () => {
       <SnippetCard snippet={snippetNoLang} onClick={() => {}} />,
     );
 
-    expect(screen.queryByText("typescript")).not.toBeInTheDocument();
+    expect(screen.getByText("?")).toBeInTheDocument();
     expect(screen.getByText("Fix async/await error")).toBeInTheDocument();
+  });
+
+  it("renders timeAgo for createdAt", () => {
+    render(
+      <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
+    );
+
+    // Should show some time ago text (e.g., "2d ago" or similar)
+    const footer = screen.getByText(/ago|just now/i);
+    expect(footer).toBeInTheDocument();
   });
 });

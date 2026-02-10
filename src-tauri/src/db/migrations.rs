@@ -13,6 +13,7 @@ pub fn run_all(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     // Run each migration if not already applied
     run_migration(conn, "001_initial_schema", create_initial_schema)?;
+    run_migration(conn, "002_settings_table", create_settings_table)?;
 
     Ok(())
 }
@@ -91,6 +92,27 @@ fn create_initial_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
+fn create_settings_table(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        r#"
+        CREATE TABLE settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            theme TEXT NOT NULL DEFAULT 'dark',
+            ollama_base_url TEXT NOT NULL DEFAULT 'http://localhost:11434',
+            llm_model TEXT NOT NULL DEFAULT 'qwen2.5-coder:7b',
+            embedding_model TEXT NOT NULL DEFAULT 'nomic-embed-text',
+            search_limit INTEGER NOT NULL DEFAULT 10,
+            data_path TEXT
+        );
+
+        -- Insert the single default row
+        INSERT INTO settings (id) VALUES (1);
+        "#
+    )?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,14 +126,14 @@ mod tests {
         run_all(&conn).unwrap();
         run_all(&conn).unwrap();
 
-        // Should have exactly one migration recorded
+        // Should have exactly two migrations recorded
         let count: i32 = conn.query_row(
             "SELECT COUNT(*) FROM migrations",
             [],
             |row| row.get(0),
         ).unwrap();
 
-        assert_eq!(count, 1);
+        assert_eq!(count, 2);
     }
 
     #[test]

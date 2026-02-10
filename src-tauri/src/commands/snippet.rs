@@ -5,8 +5,29 @@ use crate::ai::embedding;
 use crate::db::Database;
 use crate::errors::AppError;
 use crate::models::{
-    CreateSnippetInput, Snippet, SnippetFilter, SnippetSummary, Tag, UpdateSnippetInput,
+    CreateSnippetInput, Settings, Snippet, SnippetFilter, SnippetSummary, Tag, UpdateSnippetInput,
 };
+
+fn get_settings_internal(db: &Database) -> Settings {
+    db.with_connection(|conn| {
+        conn.query_row(
+            "SELECT theme, ollama_base_url, llm_model, embedding_model, search_limit, data_path
+             FROM settings WHERE id = 1",
+            [],
+            |row| {
+                Ok(Settings {
+                    theme: row.get(0)?,
+                    ollama_base_url: row.get(1)?,
+                    llm_model: row.get(2)?,
+                    embedding_model: row.get(3)?,
+                    search_limit: row.get(4)?,
+                    data_path: row.get(5)?,
+                })
+            },
+        )
+    })
+    .unwrap_or_default()
+}
 
 fn fetch_tags_for_snippet(
     db: &Database,
@@ -99,7 +120,8 @@ pub async fn create_snippet(
     let snippet = fetch_snippet_by_id(&db, &id).map_err(String::from)?;
 
     // Best-effort embedding: silently skip if Ollama is unavailable
-    let _ = embedding::embed_snippet(&db, &snippet).await;
+    let settings = get_settings_internal(&db);
+    let _ = embedding::embed_snippet(&db, &snippet, &settings.embedding_model, &settings.ollama_base_url).await;
 
     Ok(snippet)
 }
@@ -119,7 +141,7 @@ pub fn list_snippets(
     let summaries = db
         .with_connection(|conn| {
             let mut sql = String::from(
-                "SELECT id, title, problem, code_language, created_at FROM snippets WHERE 1=1",
+                "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at FROM snippets WHERE 1=1",
             );
             let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = vec![];
 
@@ -148,8 +170,9 @@ pub fn list_snippets(
                         title: row.get(1)?,
                         problem: row.get(2)?,
                         code_language: row.get(3)?,
+                        code_preview: row.get(4)?,
                         tags: vec![],
-                        created_at: row.get(4)?,
+                        created_at: row.get(5)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -245,7 +268,8 @@ pub async fn update_snippet(
 
     // Re-embed if content fields changed
     if needs_reembed {
-        let _ = embedding::embed_snippet(&db, &snippet).await;
+        let settings = get_settings_internal(&db);
+        let _ = embedding::embed_snippet(&db, &snippet, &settings.embedding_model, &settings.ollama_base_url).await;
     }
 
     Ok(snippet)
@@ -445,6 +469,7 @@ mod tests {
                             title: row.get(1)?,
                             problem: row.get(2)?,
                             code_language: row.get(3)?,
+                            code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
                         })
@@ -478,6 +503,7 @@ mod tests {
                             title: row.get(1)?,
                             problem: row.get(2)?,
                             code_language: row.get(3)?,
+                            code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
                         })
@@ -518,6 +544,7 @@ mod tests {
                             title: row.get(1)?,
                             problem: row.get(2)?,
                             code_language: row.get(3)?,
+                            code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
                         })
@@ -552,6 +579,7 @@ mod tests {
                             title: row.get(1)?,
                             problem: row.get(2)?,
                             code_language: row.get(3)?,
+                            code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
                         })

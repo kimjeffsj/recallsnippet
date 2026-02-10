@@ -1,7 +1,7 @@
 use crate::db::Database;
 use crate::models::Snippet;
 
-const DEFAULT_EMBEDDING_MODEL: &str = "nomic-embed-text";
+pub const DEFAULT_EMBEDDING_MODEL: &str = "nomic-embed-text";
 
 /// Prepare text for embedding by combining snippet fields.
 /// Title is repeated for higher weight.
@@ -37,10 +37,10 @@ pub fn save_embedding(
 }
 
 /// Generate and save embedding for a snippet (best-effort: silently skips if Ollama unavailable)
-pub async fn embed_snippet(db: &Database, snippet: &Snippet) -> Result<(), String> {
+pub async fn embed_snippet(db: &Database, snippet: &Snippet, embedding_model: &str, base_url: &str) -> Result<(), String> {
     let text = prepare_text(snippet);
-    let embedding = super::ollama::create_embedding(&text, DEFAULT_EMBEDDING_MODEL).await?;
-    save_embedding(db, &snippet.id, &embedding, DEFAULT_EMBEDDING_MODEL)
+    let embedding = super::ollama::create_embedding(&text, embedding_model, base_url).await?;
+    save_embedding(db, &snippet.id, &embedding, embedding_model)
 }
 
 /// Delete embedding for a snippet

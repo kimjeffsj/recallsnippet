@@ -2,10 +2,7 @@ use tauri::State;
 
 use crate::ai::ollama;
 use crate::db::Database;
-use crate::models::{SearchResult, SnippetSummary, Tag};
-
-const DEFAULT_EMBEDDING_MODEL: &str = "nomic-embed-text";
-const DEFAULT_SEARCH_LIMIT: usize = 10;
+use crate::models::{SearchResult, Settings, SnippetSummary, Tag};
 
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
     if a.len() != b.len() || a.is_empty() {
@@ -46,16 +43,38 @@ fn fetch_tags_for_snippet(db: &Database, snippet_id: &str) -> Vec<Tag> {
     .unwrap_or_default()
 }
 
+fn get_settings_internal(db: &Database) -> Settings {
+    db.with_connection(|conn| {
+        conn.query_row(
+            "SELECT theme, ollama_base_url, llm_model, embedding_model, search_limit, data_path
+             FROM settings WHERE id = 1",
+            [],
+            |row| {
+                Ok(Settings {
+                    theme: row.get(0)?,
+                    ollama_base_url: row.get(1)?,
+                    llm_model: row.get(2)?,
+                    embedding_model: row.get(3)?,
+                    search_limit: row.get(4)?,
+                    data_path: row.get(5)?,
+                })
+            },
+        )
+    })
+    .unwrap_or_default()
+}
+
 #[tauri::command]
 pub async fn semantic_search(
     db: State<'_, Database>,
     query: String,
     limit: Option<usize>,
 ) -> Result<Vec<SearchResult>, String> {
-    let limit = limit.unwrap_or(DEFAULT_SEARCH_LIMIT);
+    let settings = get_settings_internal(&db);
+    let limit = limit.unwrap_or(settings.search_limit as usize);
 
     // Generate query embedding
-    let query_embedding = ollama::create_embedding(&query, DEFAULT_EMBEDDING_MODEL).await?;
+    let query_embedding = ollama::create_embedding(&query, &settings.embedding_model, &settings.ollama_base_url).await?;
 
     // Load all embeddings from DB and compute similarity
     let rows: Vec<(String, Vec<u8>)> = db
@@ -90,7 +109,7 @@ pub async fn semantic_search(
         let summary = db
             .with_connection(|conn| {
                 conn.query_row(
-                    "SELECT id, title, problem, code_language, created_at FROM snippets WHERE id = ?1",
+                    "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at FROM snippets WHERE id = ?1",
                     [&snippet_id],
                     |row| {
                         Ok(SnippetSummary {
@@ -98,8 +117,9 @@ pub async fn semantic_search(
                             title: row.get(1)?,
                             problem: row.get(2)?,
                             code_language: row.get(3)?,
+                            code_preview: row.get(4)?,
                             tags: vec![],
-                            created_at: row.get(4)?,
+                            created_at: row.get(5)?,
                         })
                     },
                 )

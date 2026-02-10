@@ -9,6 +9,7 @@ const mockSnippets: SnippetSummary[] = [
     title: "First Snippet",
     problem: "First problem",
     codeLanguage: "rust",
+    codePreview: "fn main() {}",
     tags: [],
     createdAt: "2026-02-07",
   },
@@ -17,13 +18,14 @@ const mockSnippets: SnippetSummary[] = [
     title: "Second Snippet",
     problem: "Second problem",
     codeLanguage: "python",
+    codePreview: null,
     tags: [{ id: "t1", name: "web" }],
     createdAt: "2026-02-08",
   },
 ];
 
 describe("SnippetList", () => {
-  it("renders loading state", () => {
+  it("renders loading state with skeleton cards", () => {
     render(
       <SnippetList
         snippets={[]}
@@ -33,7 +35,9 @@ describe("SnippetList", () => {
       />,
     );
 
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    // Skeleton cards should have animate-pulse class
+    const skeletons = document.querySelectorAll(".animate-pulse");
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it("renders empty state", () => {
@@ -45,9 +49,7 @@ describe("SnippetList", () => {
       />,
     );
 
-    expect(
-      screen.getByText("No snippets yet. Create your first one!"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("No snippets yet")).toBeInTheDocument();
   });
 
   it("renders snippet cards", () => {
@@ -61,6 +63,18 @@ describe("SnippetList", () => {
 
     expect(screen.getByText("First Snippet")).toBeInTheDocument();
     expect(screen.getByText("Second Snippet")).toBeInTheDocument();
+  });
+
+  it("shows snippet count in header", () => {
+    render(
+      <SnippetList
+        snippets={mockSnippets}
+        selectedId={null}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("2 snippets")).toBeInTheDocument();
   });
 
   it("calls onSelect when card is clicked", () => {
@@ -88,6 +102,6 @@ describe("SnippetList", () => {
 
     const buttons = screen.getAllByRole("button");
     expect(buttons[0].className).toContain("border-primary");
-    expect(buttons[1].className).not.toContain("border-primary");
+    expect(buttons[1].className).not.toContain("border-primary shadow-lg");
   });
 });

@@ -28,6 +28,7 @@ pub struct SnippetSummary {
     pub title: String,
     pub problem: String,
     pub code_language: Option<String>,
+    pub code_preview: Option<String>,
     pub tags: Vec<Tag>,
     pub created_at: String,
 }

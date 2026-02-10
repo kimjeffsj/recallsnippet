@@ -181,48 +181,93 @@
 
 ---
 
-## Phase 4: 마무리
+## Phase 4: 마무리 + UI 리디자인
 
 ### 4.1 설정 기능
 
-- [ ] Settings 구조체 정의
-- [ ] get_settings / update_settings 커맨드
-- [ ] SettingsDialog 컴포넌트
-- [ ] LLM 모델 선택 기능
-- [ ] 테마 전환 (다크/라이트)
-- [ ] 데이터 저장 경로 설정
+#### 4.1.1 백엔드: Settings DB + Commands
+- [x] Settings, UpdateSettingsInput 구조체 정의
+- [x] settings 테이블 마이그레이션 추가 (단일 행 패턴, CHECK id=1)
+- [x] get_settings / update_settings 커맨드 구현
+- [x] ollama base_url 파라미터화 (상수 → 인자)
+- [x] embedding_model 파라미터화
+- [x] commands/ai.rs, commands/search.rs에서 settings 읽기
+- [x] Rust 테스트 6개 작성 및 통과 (총 55개)
 
-### 4.2 UI 개선
+#### 4.1.2 프론트엔드: Settings 타입 + 훅
+- [x] Settings, UpdateSettingsInput 타입 추가
+- [x] settingsApi (get, update) 추가
+- [x] useSettings(), useUpdateSettings() 훅 구현
 
-- [ ] 반응형 레이아웃 확인
-- [ ] 키보드 단축키 (선택)
-- [ ] 로딩/에러 상태 UI 일관성
-- [ ] 빈 상태 UI (스니펫 없을 때)
+#### 4.1.3 테마 시스템
+- [x] index.css DESIGN.md 색상 팔레트로 교체
+- [x] @fontsource/inter, @fontsource/jetbrains-mono 설치
+- [x] useTheme 훅 구현 (settings 기반 dark/light 토글)
+- [x] App.tsx 마운트 시 테마 초기화
+
+#### 4.1.4 SettingsDialog 컴포넌트
+- [x] SettingsDialog 구현 (Appearance, AI & Models, Storage 섹션)
+- [ ] SettingsDialog 테스트
+
+### 4.2 UI 리디자인
+
+#### 4.2.1 레이아웃 재구성
+- [x] AppHeader 컴포넌트 (로고, 중앙 검색바, New Snippet, Settings)
+- [x] AppSidebar 컴포넌트 (네비게이션, 언어 필터, Ollama 상태)
+- [x] MainLayout 전면 재작성 (header + sidebar + content)
+- [x] AppContext (view, selectedId, searchQuery, filterLanguage 공유 상태)
+
+#### 4.2.2 SnippetCard 리디자인
+- [x] SnippetSummary에 code_preview 필드 추가 (Rust + TS)
+- [x] SnippetCard 카드형 재작성 (언어 뱃지 + 코드 프리뷰 + 태그 + 타임스탬프)
+- [x] language-colors.ts 언어별 색상 맵
+
+#### 4.2.3 그리드 레이아웃
+- [x] SnippetList → grid 레이아웃 변경
+- [x] 헤더 (제목, 카운트) + 스켈레톤 로딩 상태
+
+#### 4.2.4 SnippetDetail 리디자인
+- [ ] 2-column 레이아웃 (좌: 코드 + AI, 우: 메타 + 관련 스니펫)
+- [ ] CodeBlock 파일 헤더 바 (트래픽 라이트, 파일명, 복사)
+- [ ] RelatedSnippets 컴포넌트
+
+#### 4.2.5 SnippetForm 리디자인
+- [ ] 헤더에 뒤로가기 + 저장 버튼, 태그 인라인, AI 버튼 개선
+
+#### 4.2.6 Empty/Loading/Error 상태
+- [ ] EmptyState, LoadingState, ErrorState 컴포넌트
+
+#### 4.2.7 키보드 단축키
+- [ ] useKeyboardShortcuts (⌘K 검색, ⌘N 새 스니펫, Escape 뒤로)
+
+#### 4.2.8 반응형 + HomePage 통합
+- [ ] HomePage AppContext 활용 간소화
+- [ ] 사이드바 접기/펼치기
+- [ ] Detail flex-col lg:flex-row 스택
+
+#### 4.2.9 테스트 업데이트
+- [ ] 기존 테스트 업데이트 (변경된 마크업 반영)
+- [ ] 새 테스트 (AppHeader, AppSidebar, EmptyState 등)
 
 ### 4.3 크로스 플랫폼 빌드
 
+- [ ] 앱 아이콘 생성
 - [ ] macOS 빌드 테스트
-- [ ] Windows 빌드 테스트
-- [ ] 아이콘 설정
+- [ ] .app 번들 실행 + 설정 저장 확인
 
 ### 4.4 문서화
 
-- [ ] README.md 작성
-  - [ ] 프로젝트 소개
-  - [ ] 기술 스택
-  - [ ] 설치 방법
-  - [ ] 스크린샷/GIF
-- [ ] 아키텍처 다이어그램
-- [ ] API 문서 (선택)
+- [ ] README.md (소개, 기술 스택, 스크린샷 placeholder, 설치법, 빌드법)
+- [ ] 아키텍처 다이어그램 (Mermaid)
 
 ### 4.5 Phase 4 완료 확인
 
 - [ ] 설정 변경 → 앱 재시작 없이 반영
-- [ ] macOS/Windows 빌드 성공
+- [ ] macOS 빌드 성공
 - [ ] README로 다른 사람이 셋업 가능
 - [ ] 모든 테스트 통과
 
-**Phase 4 완료일**: **\*\***\_\_\_**\*\***
+**Phase 4 완료일**: ___
 **회고/메모**:
 
 ---
@@ -262,3 +307,9 @@
 | 2026-02-09 | 3.5   | 프론트엔드 검색 UI               | SearchBar + SearchResults + 13개 테스트 (총 55개)|
 | 2026-02-09 | 3.6   | AI 도움 UI                       | AI Help/AI Tags 버튼 + useAI 훅              |
 | 2026-02-09 | 3.7   | Phase 3 완료                     | 총 104개 테스트 통과 (Rust 49 + Front 55)    |
+| 2026-02-09 | 4.1.1 | Settings 백엔드 구현             | DB/커맨드/파라미터화 + 6개 테스트 (총 55개)  |
+| 2026-02-09 | 4.1.2 | Settings 프론트엔드 타입/훅      | Settings 타입, settingsApi, useSettings 훅   |
+| 2026-02-09 | 4.1.3 | 테마 시스템 구현                 | CSS 팔레트, Inter/JetBrains 폰트, useTheme   |
+| 2026-02-09 | 4.1.4 | SettingsDialog 컴포넌트          | Appearance/AI/Storage 3섹션 다이얼로그       |
+| 2026-02-09 | 4.2.1 | 레이아웃 재구성                  | AppContext, AppHeader, AppSidebar, MainLayout|
+| 2026-02-09 | 4.2.2 | SnippetCard 모델 확장            | code_preview 필드 추가 (Rust/TS), 언어색상맵 |

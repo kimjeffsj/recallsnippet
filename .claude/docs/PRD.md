@@ -248,12 +248,21 @@ RecallSnippet - 개발자를 위한 로컬 AI 기반 코드 스니펫 & 문제 �
 - [ ] 시맨틱 검색 구현
 - [ ] AI 자동 완성 기능
 
-### Phase 4: 마무리 (1주)
+### Phase 4: 마무리 + UI 리디자인 (1주)
 
-- [ ] 설정 화면
-- [ ] 다크/라이트 테마
+- [ ] 설정 백엔드 (Settings DB + Commands)
+- [ ] 설정 프론트엔드 (Settings 타입/훅)
+- [ ] 테마 시스템 (다크/라이트, DESIGN.md 색상 팔레트)
+- [ ] SettingsDialog 컴포넌트
+- [ ] UI 리디자인 (Header + Sidebar + Content 레이아웃)
+- [ ] SnippetCard 리디자인 (카드형 + 코드 프리뷰)
+- [ ] 그리드 레이아웃 + SnippetDetail 2-column
+- [ ] Empty/Loading/Error 상태 컴포넌트
+- [ ] 키보드 단축키 (⌘K, ⌘N, Escape)
+- [ ] 반응형 + HomePage 통합
+- [ ] 테스트 업데이트
 - [ ] 크로스 플랫폼 빌드 테스트
-- [ ] README, 문서화
+- [ ] README, 아키텍처 다이어그램
 
 ---
 

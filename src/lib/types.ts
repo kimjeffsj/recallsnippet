@@ -16,6 +16,7 @@ export interface SnippetSummary {
   title: string;
   problem: string;
   codeLanguage: string | null;
+  codePreview: string | null;
   tags: Tag[];
   createdAt: string;
 }
@@ -53,4 +54,22 @@ export interface Tag {
 export interface SearchResult {
   snippet: SnippetSummary;
   score: number;
+}
+
+export interface Settings {
+  theme: string;
+  ollamaBaseUrl: string;
+  llmModel: string;
+  embeddingModel: string;
+  searchLimit: number;
+  dataPath: string | null;
+}
+
+export interface UpdateSettingsInput {
+  theme?: string;
+  ollamaBaseUrl?: string;
+  llmModel?: string;
+  embeddingModel?: string;
+  searchLimit?: number;
+  dataPath?: string;
 }

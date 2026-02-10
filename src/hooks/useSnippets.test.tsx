@@ -36,6 +36,7 @@ const mockSummary: SnippetSummary = {
   title: "Test Snippet",
   problem: "Test problem",
   codeLanguage: "rust",
+  codePreview: null,
   tags: [{ id: "t1", name: "rust" }],
   createdAt: "2026-02-07",
 };

@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-pub const OLLAMA_BASE_URL: &str = "http://localhost:11434";
+pub const DEFAULT_OLLAMA_BASE_URL: &str = "http://localhost:11434";
 
 #[derive(Serialize)]
 struct EmbeddingRequest {
@@ -25,11 +25,11 @@ struct OllamaModel {
 }
 
 /// Check if Ollama is running and reachable
-pub async fn check_connection() -> Result<bool, String> {
+pub async fn check_connection(base_url: &str) -> Result<bool, String> {
     let client = Client::new();
 
     match client
-        .get(format!("{}/api/tags", OLLAMA_BASE_URL))
+        .get(format!("{}/api/tags", base_url))
         .timeout(std::time::Duration::from_secs(3))
         .send()
         .await
@@ -40,11 +40,11 @@ pub async fn check_connection() -> Result<bool, String> {
 }
 
 /// List available Ollama models
-pub async fn list_models() -> Result<Vec<String>, String> {
+pub async fn list_models(base_url: &str) -> Result<Vec<String>, String> {
     let client = Client::new();
 
     let response = client
-        .get(format!("{}/api/tags", OLLAMA_BASE_URL))
+        .get(format!("{}/api/tags", base_url))
         .timeout(std::time::Duration::from_secs(5))
         .send()
         .await
@@ -75,11 +75,11 @@ struct GenerateResponse {
 }
 
 /// Generate text using Ollama LLM
-pub async fn generate(prompt: &str, model: &str) -> Result<String, String> {
+pub async fn generate(prompt: &str, model: &str, base_url: &str) -> Result<String, String> {
     let client = Client::new();
 
     let response = client
-        .post(format!("{}/api/generate", OLLAMA_BASE_URL))
+        .post(format!("{}/api/generate", base_url))
         .json(&GenerateRequest {
             model: model.to_string(),
             prompt: prompt.to_string(),
@@ -106,11 +106,11 @@ pub async fn generate(prompt: &str, model: &str) -> Result<String, String> {
 }
 
 /// Create an embedding vector for the given text
-pub async fn create_embedding(text: &str, model: &str) -> Result<Vec<f32>, String> {
+pub async fn create_embedding(text: &str, model: &str, base_url: &str) -> Result<Vec<f32>, String> {
     let client = Client::new();
 
     let response = client
-        .post(format!("{}/api/embed", OLLAMA_BASE_URL))
+        .post(format!("{}/api/embed", base_url))
         .json(&EmbeddingRequest {
             model: model.to_string(),
             input: text.to_string(),
@@ -146,7 +146,7 @@ mod tests {
     #[tokio::test]
     async fn test_check_connection() {
         // This test will pass whether Ollama is running or not
-        let result = check_connection().await;
+        let result = check_connection(DEFAULT_OLLAMA_BASE_URL).await;
         assert!(result.is_ok());
         // result is Ok(true) if running, Ok(false) if not
     }
@@ -154,35 +154,35 @@ mod tests {
     #[tokio::test]
     async fn test_list_models_when_ollama_not_running() {
         // If Ollama is not running, this should return an error
-        let connected = check_connection().await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
         if !connected {
-            let result = list_models().await;
+            let result = list_models(DEFAULT_OLLAMA_BASE_URL).await;
             assert!(result.is_err());
         }
     }
 
     #[tokio::test]
     async fn test_list_models_when_ollama_running() {
-        let connected = check_connection().await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
         }
 
-        let models = list_models().await.unwrap();
+        let models = list_models(DEFAULT_OLLAMA_BASE_URL).await.unwrap();
         assert!(!models.is_empty());
     }
 
     #[tokio::test]
     async fn test_create_embedding() {
-        let connected = check_connection().await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
         }
 
         let text = "Docker container networking issue";
-        let embedding = create_embedding(text, "nomic-embed-text").await.unwrap();
+        let embedding = create_embedding(text, "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL).await.unwrap();
 
         // nomic-embed-text produces 768-dimensional embeddings
         assert_eq!(embedding.len(), 768);
@@ -191,19 +191,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_similar_texts_have_higher_similarity() {
-        let connected = check_connection().await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
         }
 
-        let emb1 = create_embedding("How to fix Docker network issue", "nomic-embed-text")
+        let emb1 = create_embedding("How to fix Docker network issue", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
             .await
             .unwrap();
-        let emb2 = create_embedding("Docker container networking problem", "nomic-embed-text")
+        let emb2 = create_embedding("Docker container networking problem", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
             .await
             .unwrap();
-        let emb3 = create_embedding("Best pizza recipes for dinner", "nomic-embed-text")
+        let emb3 = create_embedding("Best pizza recipes for dinner", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
             .await
             .unwrap();
 

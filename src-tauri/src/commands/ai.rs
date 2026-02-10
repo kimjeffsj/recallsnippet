@@ -1,23 +1,50 @@
+use tauri::State;
+
 use crate::ai::ollama;
+use crate::db::Database;
+use crate::models::Settings;
 
-const DEFAULT_LLM_MODEL: &str = "qwen2.5-coder:7b";
-
-#[tauri::command]
-pub async fn check_ollama_connection() -> Result<bool, String> {
-    ollama::check_connection().await
+fn get_settings_internal(db: &Database) -> Settings {
+    db.with_connection(|conn| {
+        conn.query_row(
+            "SELECT theme, ollama_base_url, llm_model, embedding_model, search_limit, data_path
+             FROM settings WHERE id = 1",
+            [],
+            |row| {
+                Ok(Settings {
+                    theme: row.get(0)?,
+                    ollama_base_url: row.get(1)?,
+                    llm_model: row.get(2)?,
+                    embedding_model: row.get(3)?,
+                    search_limit: row.get(4)?,
+                    data_path: row.get(5)?,
+                })
+            },
+        )
+    })
+    .unwrap_or_default()
 }
 
 #[tauri::command]
-pub async fn list_ollama_models() -> Result<Vec<String>, String> {
-    ollama::list_models().await
+pub async fn check_ollama_connection(db: State<'_, Database>) -> Result<bool, String> {
+    let settings = get_settings_internal(&db);
+    ollama::check_connection(&settings.ollama_base_url).await
+}
+
+#[tauri::command]
+pub async fn list_ollama_models(db: State<'_, Database>) -> Result<Vec<String>, String> {
+    let settings = get_settings_internal(&db);
+    ollama::list_models(&settings.ollama_base_url).await
 }
 
 #[tauri::command]
 pub async fn generate_solution(
+    db: State<'_, Database>,
     problem: String,
     model: Option<String>,
 ) -> Result<String, String> {
-    let model = model.as_deref().unwrap_or(DEFAULT_LLM_MODEL);
+    let settings = get_settings_internal(&db);
+    let model = model.as_deref().unwrap_or(&settings.llm_model);
 
     let prompt = format!(
         r#"You are an AI assistant helping developers solve programming problems.
@@ -30,15 +57,17 @@ Problem:
 Solution:"#
     );
 
-    ollama::generate(&prompt, model).await
+    ollama::generate(&prompt, model, &settings.ollama_base_url).await
 }
 
 #[tauri::command]
 pub async fn suggest_tags(
+    db: State<'_, Database>,
     content: String,
     model: Option<String>,
 ) -> Result<Vec<String>, String> {
-    let model = model.as_deref().unwrap_or(DEFAULT_LLM_MODEL);
+    let settings = get_settings_internal(&db);
+    let model = model.as_deref().unwrap_or(&settings.llm_model);
 
     let prompt = format!(
         r#"Analyze the following development-related content and suggest 3-5 relevant tags.
@@ -51,7 +80,7 @@ Content:
 Tags (JSON array only):"#
     );
 
-    let response = ollama::generate(&prompt, model).await?;
+    let response = ollama::generate(&prompt, model, &settings.ollama_base_url).await?;
 
     // Try to parse JSON array from response
     parse_tags_from_response(&response)

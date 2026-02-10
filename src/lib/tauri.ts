@@ -7,6 +7,8 @@ import type {
   SnippetFilter,
   Tag,
   SearchResult,
+  Settings,
+  UpdateSettingsInput,
 } from "./types";
 
 export const snippetApi = {
@@ -47,4 +49,11 @@ export const tagApi = {
   create: (name: string) => invoke<Tag>("create_tag", { name }),
 
   delete: (id: string) => invoke<void>("delete_tag", { id }),
+};
+
+export const settingsApi = {
+  get: () => invoke<Settings>("get_settings"),
+
+  update: (input: UpdateSettingsInput) =>
+    invoke<Settings>("update_settings", { input }),
 };

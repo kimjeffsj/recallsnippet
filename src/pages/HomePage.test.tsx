@@ -23,6 +23,7 @@ const mockSummaries: SnippetSummary[] = [
     title: "Fix borrow checker",
     problem: "Cannot borrow as mutable",
     codeLanguage: "rust",
+    codePreview: null,
     tags: [mockTags[0]],
     createdAt: "2026-02-09",
   },
@@ -31,6 +32,7 @@ const mockSummaries: SnippetSummary[] = [
     title: "Async timeout",
     problem: "Future times out",
     codeLanguage: "typescript",
+    codePreview: null,
     tags: [mockTags[1]],
     createdAt: "2026-02-09",
   },
@@ -217,7 +219,7 @@ describe("HomePage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("No snippets yet. Create your first one!"),
+        screen.getByText("No snippets yet"),
       ).toBeInTheDocument();
     });
   });

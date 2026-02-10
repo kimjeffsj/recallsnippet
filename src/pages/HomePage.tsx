@@ -1,12 +1,8 @@
-import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SnippetList } from "@/components/snippet/SnippetList";
 import { SnippetDetail } from "@/components/snippet/SnippetDetail";
 import { SnippetForm } from "@/components/snippet/SnippetForm";
-import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   useSnippets,
   useSnippet,
@@ -16,16 +12,16 @@ import {
 } from "@/hooks/useSnippets";
 import { useTags } from "@/hooks/useTags";
 import { useSemanticSearch } from "@/hooks/useSearch";
-import { Plus } from "lucide-react";
+import {
+  AppProvider,
+  useAppState,
+  useAppDispatch,
+} from "@/contexts/AppContext";
 import type { CreateSnippetInput } from "@/lib/types";
 
-type View = "list" | "create" | "edit" | "detail";
-
-export function HomePage() {
-  const [view, setView] = useState<View>("list");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filterLanguage, setFilterLanguage] = useState<string | undefined>();
-  const [searchQuery, setSearchQuery] = useState("");
+function HomeContent() {
+  const { view, selectedId, searchQuery, filterLanguage } = useAppState();
+  const dispatch = useAppDispatch();
 
   const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
     filterLanguage ? { language: filterLanguage } : undefined,
@@ -45,15 +41,13 @@ export function HomePage() {
   const deleteMutation = useDeleteSnippet();
 
   const handleSelect = (id: string) => {
-    setSelectedId(id);
-    setView("detail");
+    dispatch({ type: "SELECT_SNIPPET", id });
   };
 
   const handleCreate = (data: CreateSnippetInput) => {
     createMutation.mutate(data, {
       onSuccess: (created) => {
-        setSelectedId(created.id);
-        setView("detail");
+        dispatch({ type: "SELECT_SNIPPET", id: created.id });
       },
     });
   };
@@ -64,7 +58,7 @@ export function HomePage() {
       { id: selectedId, input: data },
       {
         onSuccess: () => {
-          setView("detail");
+          dispatch({ type: "SET_VIEW", view: "detail" });
         },
       },
     );
@@ -74,97 +68,22 @@ export function HomePage() {
     if (!confirm("Are you sure you want to delete this snippet?")) return;
     deleteMutation.mutate(id, {
       onSuccess: () => {
-        setSelectedId(null);
-        setView("list");
+        dispatch({ type: "DESELECT_SNIPPET" });
       },
     });
   };
 
   const handleBack = () => {
     if (view === "detail") {
-      setView("list");
+      dispatch({ type: "NAVIGATE_TO_LIST" });
     } else {
-      setView(selectedId ? "detail" : "list");
+      if (selectedId) {
+        dispatch({ type: "SET_VIEW", view: "detail" });
+      } else {
+        dispatch({ type: "NAVIGATE_TO_LIST" });
+      }
     }
   };
-
-  // Collect unique languages for filter sidebar
-  const languages = [
-    ...new Set(
-      snippets.map((s) => s.codeLanguage).filter(Boolean) as string[],
-    ),
-  ];
-
-  const sidebar = (
-    <div className="space-y-4">
-      <Button
-        className="w-full"
-        onClick={() => {
-          setSelectedId(null);
-          setView("create");
-        }}
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        New Snippet
-      </Button>
-
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
-
-      {languages.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Languages
-          </h3>
-          <div className="flex flex-wrap gap-1">
-            <button
-              type="button"
-              onClick={() => setFilterLanguage(undefined)}
-              className="inline-flex"
-            >
-              <Badge
-                variant={!filterLanguage ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-              >
-                All
-              </Badge>
-            </button>
-            {languages.map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() =>
-                  setFilterLanguage(filterLanguage === lang ? undefined : lang)
-                }
-                className="inline-flex"
-              >
-                <Badge
-                  variant={filterLanguage === lang ? "default" : "outline"}
-                  className="cursor-pointer text-xs"
-                >
-                  {lang}
-                </Badge>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tags.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Tags
-          </h3>
-          <div className="flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <Badge key={tag.id} variant="outline" className="text-xs">
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const renderContent = () => {
     switch (view) {
@@ -195,7 +114,7 @@ export function HomePage() {
         return (
           <SnippetDetail
             snippet={selectedSnippet}
-            onEdit={() => setView("edit")}
+            onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
           />
         );
@@ -208,7 +127,11 @@ export function HomePage() {
                 <div className="text-center space-y-2">
                   <p>AI search requires Ollama to be running.</p>
                   <p className="text-xs">
-                    Run <code className="bg-muted px-1 py-0.5 rounded">ollama serve</code> to enable semantic search.
+                    Run{" "}
+                    <code className="bg-muted px-1 py-0.5 rounded">
+                      ollama serve
+                    </code>{" "}
+                    to enable semantic search.
                   </p>
                 </div>
               </div>
@@ -233,5 +156,13 @@ export function HomePage() {
     }
   };
 
-  return <MainLayout sidebar={sidebar}>{renderContent()}</MainLayout>;
+  return <MainLayout>{renderContent()}</MainLayout>;
+}
+
+export function HomePage() {
+  return (
+    <AppProvider>
+      <HomeContent />
+    </AppProvider>
+  );
 }

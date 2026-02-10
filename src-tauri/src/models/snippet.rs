@@ -1,5 +1,20 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnippetSource {
+    pub id: String,
+    pub title: String,
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiChatResponse {
+    pub answer: String,
+    pub sources: Vec<SnippetSource>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snippet {

@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::ai::ollama;
 use crate::db::Database;
-use crate::models::{Settings, SnippetSummary, Tag};
+use crate::models::{AiChatResponse, Settings, SnippetSource, SnippetSummary, Tag};
 
 fn get_settings_internal(db: &Database) -> Settings {
     db.with_connection(|conn| {
@@ -193,12 +193,23 @@ pub async fn ai_chat(
     db: State<'_, Database>,
     message: String,
     snippet_context: Option<SnippetContext>,
-) -> Result<String, String> {
+) -> Result<AiChatResponse, String> {
     let settings = get_settings_internal(&db);
 
     // Semantic search for relevant snippets
     let query_embedding = ollama::create_embedding(&message, &settings.embedding_model, &settings.ollama_base_url).await?;
     let similar = search_similar_snippets(&db, &query_embedding, 5)?;
+
+    // Collect sources with score >= 0.3
+    let sources: Vec<SnippetSource> = similar
+        .iter()
+        .filter(|(_, score)| *score >= 0.3)
+        .map(|(s, score)| SnippetSource {
+            id: s.id.clone(),
+            title: s.title.clone(),
+            score: *score,
+        })
+        .collect();
 
     // Build context from search results
     let mut context_parts = Vec::new();
@@ -251,7 +262,8 @@ Always reference which snippet(s) you're drawing from.
 ## Your answer:"#
     );
 
-    ollama::generate(&prompt, &settings.llm_model, &settings.ollama_base_url).await
+    let answer = ollama::generate(&prompt, &settings.llm_model, &settings.ollama_base_url).await?;
+    Ok(AiChatResponse { answer, sources })
 }
 
 fn parse_tags_from_response(response: &str) -> Result<Vec<String>, String> {

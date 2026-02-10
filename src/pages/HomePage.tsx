@@ -20,13 +20,13 @@ import {
   useAppDispatch,
 } from "@/contexts/AppContext";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import type { CreateSnippetInput } from "@/lib/types";
+import type { CreateSnippetInput, SnippetContext } from "@/lib/types";
 
 function HomeContent() {
   const { view, selectedId, searchQuery, filterLanguage } = useAppState();
   const dispatch = useAppDispatch();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const [spotlightQuery, setSpotlightQuery] = useState<string | undefined>();
+  const [spotlightContext, setSpotlightContext] = useState<SnippetContext | undefined>();
 
   const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
     filterLanguage ? { language: filterLanguage } : undefined,
@@ -77,8 +77,8 @@ function HomeContent() {
     });
   };
 
-  const openSpotlight = useCallback((initialQuery?: string) => {
-    setSpotlightQuery(initialQuery);
+  const openSpotlight = useCallback((context?: SnippetContext) => {
+    setSpotlightContext(context);
     setSpotlightOpen(true);
   }, []);
 
@@ -144,7 +144,14 @@ function HomeContent() {
             onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
             onBack={handleBack}
-            onFindRelated={() => openSpotlight(selectedSnippet.title)}
+            onAskAI={() =>
+              openSpotlight({
+                title: selectedSnippet.title,
+                problem: selectedSnippet.problem,
+                solution: selectedSnippet.solution ?? undefined,
+                code: selectedSnippet.code ?? undefined,
+              })
+            }
           />
         );
 
@@ -192,7 +199,7 @@ function HomeContent() {
         open={spotlightOpen}
         onOpenChange={setSpotlightOpen}
         onSelectSnippet={handleSelect}
-        initialQuery={spotlightQuery}
+        snippetContext={spotlightContext}
       />
     </>
   );

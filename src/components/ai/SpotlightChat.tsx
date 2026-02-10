@@ -6,81 +6,113 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Loader2 } from "lucide-react";
-import { searchApi } from "@/lib/tauri";
-import { getLanguageInfo } from "@/lib/language-colors";
-import type { SearchResult } from "@/lib/types";
+import { Sparkles, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { aiApi } from "@/lib/tauri";
+import { MarkdownRenderer } from "./MarkdownRenderer";
+import { SourceCards } from "./SourceCards";
+import type { SnippetContext, SnippetSource } from "@/lib/types";
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  sources?: SnippetSource[];
+}
 
 interface SpotlightChatProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectSnippet: (id: string) => void;
-  initialQuery?: string;
+  snippetContext?: SnippetContext;
 }
 
 export function SpotlightChat({
   open,
   onOpenChange,
   onSelectSnippet,
-  initialQuery,
+  snippetContext,
 }: SpotlightChatProps) {
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // Focus input when dialog opens, reset on close
+  // Reset on close, focus on open
   useEffect(() => {
     if (open) {
-      const query = initialQuery ?? "";
-      setInput(query);
-      setResults([]);
-      setHasSearched(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
-      if (query.length > 2) {
-        performSearch(query);
-      }
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    } else {
+      setMessages([]);
+      setInput("");
+      setIsLoading(false);
+      setElapsedSeconds(0);
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-  }, [open, initialQuery]);
+  }, [open]);
 
-  const performSearch = useCallback(async (query: string) => {
-    if (query.length <= 2) {
-      setResults([]);
-      setHasSearched(false);
-      return;
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-    setIsSearching(true);
-    setHasSearched(true);
+  }, [messages, isLoading]);
+
+  // Elapsed time timer
+  useEffect(() => {
+    if (isLoading) {
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isLoading]);
+
+  const handleSend = useCallback(async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isLoading) return;
+
+    const userMessage: ChatMessage = { role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
     try {
-      const data = await searchApi.semantic(query, 10);
-      setResults(data);
-    } catch {
-      setResults([]);
+      const response = await aiApi.chat(trimmed, snippetContext);
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: response.answer,
+        sources: response.sources,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      const errorMessage: ChatMessage = {
+        role: "assistant",
+        content: `Error: ${err instanceof Error ? err.message : String(err)}`,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setIsSearching(false);
+      setIsLoading(false);
     }
-  }, []);
-
-  const handleInputChange = (value: string) => {
-    setInput(value);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      performSearch(value);
-    }, 300);
-  };
-
-  const handleSelect = (id: string) => {
-    onSelectSnippet(id);
-    onOpenChange(false);
-  };
+  }, [input, isLoading, snippetContext]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      performSearch(input);
+      handleSend();
     }
+  };
+
+  const handleSourceSelect = (id: string) => {
+    onSelectSnippet(id);
+    onOpenChange(false);
   };
 
   return (
@@ -89,101 +121,111 @@ export function SpotlightChat({
         className="sm:max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0"
         showCloseButton={false}
       >
-        <DialogTitle className="sr-only">Find Related Snippets</DialogTitle>
+        <DialogTitle className="sr-only">Recall Assistant</DialogTitle>
         <DialogDescription className="sr-only">
-          Search your knowledge base for related snippets
+          Ask questions about your code snippet knowledge base
         </DialogDescription>
+
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <div className="bg-primary/10 p-1.5 rounded-lg">
-            <Search className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold">Find Related</h3>
+            <h3 className="text-sm font-semibold">Recall Assistant</h3>
           </div>
           <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">
             ⌘J
           </kbd>
         </div>
 
-        {/* Search Input */}
-        <div className="border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Search your knowledge base..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            {isSearching && (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
-            )}
-          </div>
-        </div>
-
-        {/* Results */}
+        {/* Messages area */}
         <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
-          <div className="p-2">
-            {!hasSearched && results.length === 0 && (
+          <div ref={scrollRef} className="p-4 space-y-4">
+            {messages.length === 0 && !isLoading && (
               <div className="text-center py-8 text-muted-foreground">
-                <Search className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                <p className="text-sm font-medium">Search your snippets</p>
+                <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">Ask your knowledge base</p>
                 <p className="text-xs mt-1">
-                  Find related snippets using semantic search
+                  Ask questions and get answers from your saved snippets
                 </p>
-              </div>
-            )}
-            {hasSearched && !isSearching && results.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No related snippets found</p>
-                <p className="text-xs mt-1">Try a different search query</p>
-              </div>
-            )}
-            {results.map((result) => {
-              const langInfo = getLanguageInfo(result.snippet.codeLanguage);
-              const score = Math.round(result.score * 100);
-              return (
-                <button
-                  key={result.snippet.id}
-                  onClick={() => handleSelect(result.snippet.id)}
-                  className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-medium text-foreground truncate">
-                          {result.snippet.title}
-                        </h4>
-                        {result.snippet.codeLanguage && (
-                          <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium border shrink-0"
-                            style={{
-                              backgroundColor: `${langInfo.color}15`,
-                              color: langInfo.color,
-                              borderColor: `${langInfo.color}30`,
-                            }}
-                          >
-                            {langInfo.abbr}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {result.snippet.problem}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted-foreground shrink-0 mt-0.5">
-                      {score}%
-                    </span>
+                {snippetContext && (
+                  <div className="mt-3 px-3 py-2 bg-muted rounded-lg text-xs text-left inline-block max-w-sm">
+                    <span className="font-medium text-foreground">Context:</span>{" "}
+                    {snippetContext.title}
                   </div>
-                </button>
-              );
-            })}
+                )}
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-xl px-4 py-3 ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
+                >
+                  {msg.role === "assistant" ? (
+                    <>
+                      <MarkdownRenderer content={msg.content} />
+                      {msg.sources && msg.sources.length > 0 && (
+                        <SourceCards
+                          sources={msg.sources}
+                          onSelect={handleSourceSelect}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-xl px-4 py-3 flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    Thinking
+                    {elapsedSeconds >= 5 && (
+                      <span className="ml-1 text-xs">({elapsedSeconds}s)</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
+
+        {/* Input area */}
+        <div className="border-t border-border px-4 py-3">
+          <div className="flex items-end gap-2">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about your snippets..."
+              rows={1}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground resize-none max-h-32 min-h-[36px] py-2"
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="shrink-0 text-muted-foreground hover:text-primary"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

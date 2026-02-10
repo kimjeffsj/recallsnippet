@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { aiApi } from "@/lib/tauri";
+import type { SnippetContext } from "@/lib/types";
 
 export function useOllamaStatus() {
   return useQuery({
@@ -19,6 +20,13 @@ export function useGenerateSolution() {
 export function useSuggestTags() {
   return useMutation({
     mutationFn: (content: string) => aiApi.suggestTags(content),
+  });
+}
+
+export function useAIChat() {
+  return useMutation({
+    mutationFn: ({ message, snippetContext }: { message: string; snippetContext?: SnippetContext }) =>
+      aiApi.chat(message, snippetContext),
   });
 }
 

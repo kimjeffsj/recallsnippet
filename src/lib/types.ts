@@ -65,6 +65,24 @@ export interface Settings {
   dataPath: string | null;
 }
 
+export interface SnippetSource {
+  id: string;
+  title: string;
+  score: number;
+}
+
+export interface AiChatResponse {
+  answer: string;
+  sources: SnippetSource[];
+}
+
+export interface SnippetContext {
+  title: string;
+  problem: string;
+  solution?: string;
+  code?: string;
+}
+
 export interface UpdateSettingsInput {
   theme?: string;
   ollamaBaseUrl?: string;

@@ -18,7 +18,7 @@ import {
   Trash2,
   ExternalLink,
   Clock,
-  Search,
+  Sparkles,
 } from "lucide-react";
 import type { Snippet } from "@/lib/types";
 
@@ -27,7 +27,7 @@ interface SnippetDetailProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onBack?: () => void;
-  onFindRelated?: () => void;
+  onAskAI?: () => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -47,7 +47,7 @@ export function SnippetDetail({
   onEdit,
   onDelete,
   onBack,
-  onFindRelated,
+  onAskAI,
 }: SnippetDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const langInfo = getLanguageInfo(snippet.codeLanguage);
@@ -175,29 +175,29 @@ export function SnippetDetail({
             </section>
           )}
 
-          {/* Find Related Bar */}
+          {/* Ask AI Bar */}
           <div className="bg-muted border border-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                <Search className="h-5 w-5" />
+                <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
-                  Find Related
+                  Ask AI
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Search for similar snippets in your knowledge base.
+                  Ask questions about this snippet using your knowledge base.
                 </p>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={onFindRelated}
+              onClick={onAskAI}
               className="gap-1.5"
             >
-              <Search className="h-3.5 w-3.5" />
-              Find Related
+              <Sparkles className="h-3.5 w-3.5" />
+              Ask AI
             </Button>
           </div>
         </div>

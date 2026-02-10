@@ -9,6 +9,8 @@ import type {
   SearchResult,
   Settings,
   UpdateSettingsInput,
+  AiChatResponse,
+  SnippetContext,
 } from "./types";
 
 export const snippetApi = {
@@ -42,6 +44,8 @@ export const aiApi = {
   suggestTags: (content: string, model?: string) =>
     invoke<string[]>("suggest_tags", { content, model }),
 
+  chat: (message: string, snippetContext?: SnippetContext) =>
+    invoke<AiChatResponse>("ai_chat", { message, snippetContext }),
 };
 
 export const tagApi = {

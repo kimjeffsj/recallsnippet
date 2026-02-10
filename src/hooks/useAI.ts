@@ -21,3 +21,20 @@ export function useSuggestTags() {
     mutationFn: (content: string) => aiApi.suggestTags(content),
   });
 }
+
+interface AIChatParams {
+  message: string;
+  snippetContext?: {
+    title: string;
+    problem: string;
+    solution?: string;
+    code?: string;
+  };
+}
+
+export function useAIChat() {
+  return useMutation({
+    mutationFn: ({ message, snippetContext }: AIChatParams) =>
+      aiApi.chat(message, snippetContext),
+  });
+}

@@ -41,8 +41,8 @@ describe("SearchResults", () => {
   it("shows similarity score as percentage", () => {
     render(<SearchResults results={mockResults} onSelect={() => {}} />);
 
-    expect(screen.getByText("95%")).toBeInTheDocument();
-    expect(screen.getByText("72%")).toBeInTheDocument();
+    expect(screen.getByText("Relevance 95%")).toBeInTheDocument();
+    expect(screen.getByText("Relevance 72%")).toBeInTheDocument();
   });
 
   it("shows language badges", () => {

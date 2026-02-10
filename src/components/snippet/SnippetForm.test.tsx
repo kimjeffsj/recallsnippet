@@ -9,6 +9,17 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => Promise.resolve(false)),
 }));
 
+vi.mock("@/components/editor/CodeEditor", () => ({
+  CodeEditor: ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => (
+    <textarea
+      data-testid="code-editor"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  ),
+}));
+
 const mockTags: Tag[] = [
   { id: "t1", name: "rust" },
   { id: "t2", name: "async" },

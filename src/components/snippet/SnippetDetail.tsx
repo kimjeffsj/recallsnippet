@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Clock,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import type { Snippet } from "@/lib/types";
 
@@ -27,6 +28,7 @@ interface SnippetDetailProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onBack?: () => void;
+  onAskAI?: () => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -46,6 +48,7 @@ export function SnippetDetail({
   onEdit,
   onDelete,
   onBack,
+  onAskAI,
 }: SnippetDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const langInfo = getLanguageInfo(snippet.codeLanguage);
@@ -174,20 +177,29 @@ export function SnippetDetail({
           )}
 
           {/* AI Action Bar */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-muted border border-border rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 p-2 rounded-lg text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
-                  Ollama Insight
+                  Recall Assistant
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Ask local AI to refactor or explain this code.
+                  Ask AI about this snippet using your knowledge base.
                 </p>
               </div>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAskAI}
+              className="gap-1.5"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Ask AI
+            </Button>
           </div>
         </div>
 

@@ -43,6 +43,7 @@ pub fn run() {
             commands::semantic_search,
             commands::generate_solution,
             commands::suggest_tags,
+            commands::ai_chat,
             commands::get_settings,
             commands::update_settings,
         ])

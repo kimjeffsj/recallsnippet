@@ -3,15 +3,24 @@ import { useEffect } from "react";
 interface KeyboardShortcutHandlers {
   onNewSnippet?: () => void;
   onEscape?: () => void;
+  onSpotlight?: () => void;
 }
 
 export function useKeyboardShortcuts({
   onNewSnippet,
   onEscape,
+  onSpotlight,
 }: KeyboardShortcutHandlers) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Don't trigger shortcuts when typing in inputs
+      // ⌘J / Ctrl+J — Spotlight (works even in inputs)
+      if ((e.metaKey || e.ctrlKey) && e.key === "j") {
+        e.preventDefault();
+        onSpotlight?.();
+        return;
+      }
+
+      // Don't trigger other shortcuts when typing in inputs
       const target = e.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||
@@ -41,5 +50,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onNewSnippet, onEscape]);
+  }, [onNewSnippet, onEscape, onSpotlight]);
 }

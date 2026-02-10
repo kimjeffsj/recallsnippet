@@ -1,8 +1,11 @@
+import { useState, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SnippetList } from "@/components/snippet/SnippetList";
 import { SnippetDetail } from "@/components/snippet/SnippetDetail";
 import { SnippetForm } from "@/components/snippet/SnippetForm";
 import { SearchResults } from "@/components/search/SearchResults";
+import { SpotlightChat } from "@/components/ai/SpotlightChat";
+import type { SnippetContext } from "@/components/ai/SpotlightChat";
 import {
   useSnippets,
   useSnippet,
@@ -23,6 +26,8 @@ import type { CreateSnippetInput } from "@/lib/types";
 function HomeContent() {
   const { view, selectedId, searchQuery, filterLanguage } = useAppState();
   const dispatch = useAppDispatch();
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [spotlightContext, setSpotlightContext] = useState<SnippetContext | undefined>();
 
   const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
     filterLanguage ? { language: filterLanguage } : undefined,
@@ -73,6 +78,11 @@ function HomeContent() {
     });
   };
 
+  const openSpotlight = useCallback((context?: SnippetContext) => {
+    setSpotlightContext(context);
+    setSpotlightOpen(true);
+  }, []);
+
   useKeyboardShortcuts({
     onNewSnippet: () => dispatch({ type: "NAVIGATE_TO_CREATE" }),
     onEscape: () => {
@@ -86,6 +96,7 @@ function HomeContent() {
         }
       }
     },
+    onSpotlight: () => openSpotlight(),
   });
 
   const handleBack = () => {
@@ -108,6 +119,7 @@ function HomeContent() {
             availableTags={tags}
             onSubmit={handleCreate}
             onCancel={handleBack}
+            onNavigateToSnippet={handleSelect}
             isLoading={createMutation.isPending}
           />
         );
@@ -120,6 +132,7 @@ function HomeContent() {
             availableTags={tags}
             onSubmit={handleUpdate}
             onCancel={handleBack}
+            onNavigateToSnippet={handleSelect}
             isLoading={updateMutation.isPending}
           />
         );
@@ -132,6 +145,14 @@ function HomeContent() {
             onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
             onBack={handleBack}
+            onAskAI={() =>
+              openSpotlight({
+                title: selectedSnippet.title,
+                problem: selectedSnippet.problem,
+                solution: selectedSnippet.solution ?? undefined,
+                code: selectedSnippet.code ?? undefined,
+              })
+            }
           />
         );
 
@@ -172,7 +193,16 @@ function HomeContent() {
     }
   };
 
-  return <MainLayout>{renderContent()}</MainLayout>;
+  return (
+    <>
+      <MainLayout>{renderContent()}</MainLayout>
+      <SpotlightChat
+        open={spotlightOpen}
+        onOpenChange={setSpotlightOpen}
+        snippetContext={spotlightContext}
+      />
+    </>
+  );
 }
 
 export function HomePage() {

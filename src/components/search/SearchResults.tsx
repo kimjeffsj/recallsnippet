@@ -44,7 +44,7 @@ export function SearchResults({
                 {result.snippet.title}
               </h3>
               <span className="text-xs text-muted-foreground flex-shrink-0">
-                {Math.round(result.score * 100)}%
+                Relevance {Math.round(result.score * 100)}%
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">

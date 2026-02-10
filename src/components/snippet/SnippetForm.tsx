@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Sparkles, Loader2, X, Save } from "lucide-react";
-import { useGenerateSolution, useSuggestTags, useOllamaStatus } from "@/hooks/useAI";
-import type { Snippet, CreateSnippetInput, Tag } from "@/lib/types";
+import { ArrowLeft, Sparkles, Loader2, X, Save, AlertTriangle } from "lucide-react";
+import { useSuggestTags, useOllamaStatus } from "@/hooks/useAI";
+import { CodeEditor } from "@/components/editor/CodeEditor";
+import { searchApi } from "@/lib/tauri";
+import type { Snippet, CreateSnippetInput, Tag, SearchResult } from "@/lib/types";
 
 interface SnippetFormProps {
   snippet?: Snippet;
   availableTags: Tag[];
   onSubmit: (data: CreateSnippetInput) => void;
   onCancel: () => void;
+  onNavigateToSnippet?: (id: string) => void;
   isLoading?: boolean;
 }
 
@@ -20,6 +23,7 @@ export function SnippetForm({
   availableTags,
   onSubmit,
   onCancel,
+  onNavigateToSnippet,
   isLoading = false,
 }: SnippetFormProps) {
   const [title, setTitle] = useState(snippet?.title ?? "");
@@ -36,10 +40,49 @@ export function SnippetForm({
     snippet?.tags.map((t) => t.id) ?? [],
   );
   const [aiError, setAiError] = useState<string | null>(null);
+  const [similarSnippets, setSimilarSnippets] = useState<SearchResult[]>([]);
 
   const { data: ollamaConnected = false } = useOllamaStatus();
-  const generateSolution = useGenerateSolution();
   const suggestTags = useSuggestTags();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const checkDuplicates = useCallback(
+    (searchText: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (searchText.length < 5) {
+        setSimilarSnippets([]);
+        return;
+      }
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const results = await searchApi.semantic(searchText, 3);
+          const filtered = results.filter(
+            (r) => r.score > 0.5 && r.snippet.id !== snippet?.id,
+          );
+          setSimilarSnippets(filtered);
+        } catch {
+          // Silently ignore - Ollama may not be running
+        }
+      }, 500);
+    },
+    [snippet?.id],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    checkDuplicates(`${value} ${problem}`);
+  };
+
+  const handleProblemChange = (value: string) => {
+    setProblem(value);
+    checkDuplicates(`${title} ${value}`);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,19 +103,6 @@ export function SnippetForm({
         ? prev.filter((id) => id !== tagId)
         : [...prev, tagId],
     );
-  };
-
-  const handleGenerateSolution = () => {
-    if (!problem.trim()) return;
-    setAiError(null);
-    generateSolution.mutate(problem.trim(), {
-      onSuccess: (generated) => {
-        setSolution(generated);
-      },
-      onError: () => {
-        setAiError("Failed to generate solution. Is Ollama running?");
-      },
-    });
   };
 
   const handleSuggestTags = () => {
@@ -101,7 +131,6 @@ export function SnippetForm({
   };
 
   const isValid = title.trim().length > 0 && problem.trim().length > 0;
-  const isGenerating = generateSolution.isPending;
   const isSuggesting = suggestTags.isPending;
 
   return (
@@ -140,6 +169,30 @@ export function SnippetForm({
         </div>
       )}
 
+      {similarSnippets.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-6" data-testid="duplicate-banner">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-medium text-amber-500">
+              Similar snippets found
+            </span>
+          </div>
+          <ul className="space-y-1">
+            {similarSnippets.map((result) => (
+              <li key={result.snippet.id}>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToSnippet?.(result.snippet.id)}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {result.snippet.title} (Relevance {Math.round(result.score * 100)}%)
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <form id="snippet-form" onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
         {/* Title + Language row */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-4">
@@ -148,7 +201,7 @@ export function SnippetForm({
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Brief description of the issue"
               required
             />
@@ -170,36 +223,16 @@ export function SnippetForm({
           <Textarea
             id="problem"
             value={problem}
-            onChange={(e) => setProblem(e.target.value)}
+            onChange={(e) => handleProblemChange(e.target.value)}
             placeholder="Describe the problem you encountered"
             rows={3}
             required
           />
         </div>
 
-        {/* Solution with AI button */}
+        {/* Solution */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="solution">Solution</Label>
-            {ollamaConnected && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateSolution}
-                disabled={isGenerating || !problem.trim()}
-                aria-label="Generate solution with AI"
-                className="gap-1.5 text-xs"
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                {isGenerating ? "Generating..." : "AI Help"}
-              </Button>
-            )}
-          </div>
+          <Label htmlFor="solution">Solution</Label>
           <Textarea
             id="solution"
             value={solution}
@@ -211,14 +244,12 @@ export function SnippetForm({
 
         {/* Code */}
         <div className="space-y-2">
-          <Label htmlFor="code">Code</Label>
-          <Textarea
-            id="code"
+          <Label>Code</Label>
+          <CodeEditor
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={setCode}
+            language={codeLanguage}
             placeholder="Paste relevant code"
-            rows={8}
-            className="font-mono text-sm"
           />
         </div>
 

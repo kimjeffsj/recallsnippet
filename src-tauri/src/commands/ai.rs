@@ -1,8 +1,9 @@
+use serde::Deserialize;
 use tauri::State;
 
 use crate::ai::ollama;
 use crate::db::Database;
-use crate::models::Settings;
+use crate::models::{Settings, SnippetSummary, Tag};
 
 fn get_settings_internal(db: &Database) -> Settings {
     db.with_connection(|conn| {
@@ -84,6 +85,173 @@ Tags (JSON array only):"#
 
     // Try to parse JSON array from response
     parse_tags_from_response(&response)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnippetContext {
+    pub title: String,
+    pub problem: String,
+    pub solution: Option<String>,
+    pub code: Option<String>,
+}
+
+fn fetch_tags_for_snippet(db: &Database, snippet_id: &str) -> Vec<Tag> {
+    db.with_connection(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT t.id, t.name FROM tags t
+             INNER JOIN snippet_tags st ON st.tag_id = t.id
+             WHERE st.snippet_id = ?1",
+        )?;
+        let tags = stmt
+            .query_map([snippet_id], |row| {
+                Ok(Tag {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tags)
+    })
+    .unwrap_or_default()
+}
+
+fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
+    if a.len() != b.len() || a.is_empty() {
+        return 0.0;
+    }
+    let dot: f64 = a.iter().zip(b.iter()).map(|(x, y)| (*x as f64) * (*y as f64)).sum();
+    let mag_a: f64 = a.iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>().sqrt();
+    let mag_b: f64 = b.iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>().sqrt();
+    if mag_a == 0.0 || mag_b == 0.0 {
+        return 0.0;
+    }
+    dot / (mag_a * mag_b)
+}
+
+fn decode_embedding(blob: &[u8]) -> Vec<f32> {
+    blob.chunks_exact(4)
+        .map(|chunk| f32::from_le_bytes(chunk.try_into().unwrap()))
+        .collect()
+}
+
+fn search_similar_snippets(db: &Database, query_embedding: &[f32], limit: usize) -> Result<Vec<(SnippetSummary, f64)>, String> {
+    let rows: Vec<(String, Vec<u8>)> = db
+        .with_connection(|conn| {
+            let mut stmt = conn.prepare("SELECT snippet_id, embedding FROM embeddings")?;
+            let rows = stmt
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        })
+        .map_err(|e| format!("Failed to load embeddings: {}", e))?;
+
+    let mut scored: Vec<(String, f64)> = rows
+        .iter()
+        .map(|(id, blob)| {
+            let emb = decode_embedding(blob);
+            let score = cosine_similarity(query_embedding, &emb);
+            (id.clone(), score)
+        })
+        .collect();
+
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(limit);
+
+    let mut results = Vec::with_capacity(scored.len());
+    for (snippet_id, score) in scored {
+        let summary = db
+            .with_connection(|conn| {
+                conn.query_row(
+                    "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at FROM snippets WHERE id = ?1",
+                    [&snippet_id],
+                    |row| {
+                        Ok(SnippetSummary {
+                            id: row.get(0)?,
+                            title: row.get(1)?,
+                            problem: row.get(2)?,
+                            code_language: row.get(3)?,
+                            code_preview: row.get(4)?,
+                            tags: vec![],
+                            created_at: row.get(5)?,
+                        })
+                    },
+                )
+            })
+            .map_err(|e| format!("Failed to fetch snippet: {}", e))?;
+
+        let tags = fetch_tags_for_snippet(db, &snippet_id);
+        let summary = SnippetSummary { tags, ..summary };
+        results.push((summary, score));
+    }
+
+    Ok(results)
+}
+
+#[tauri::command]
+pub async fn ai_chat(
+    db: State<'_, Database>,
+    message: String,
+    snippet_context: Option<SnippetContext>,
+) -> Result<String, String> {
+    let settings = get_settings_internal(&db);
+
+    // Semantic search for relevant snippets
+    let query_embedding = ollama::create_embedding(&message, &settings.embedding_model, &settings.ollama_base_url).await?;
+    let similar = search_similar_snippets(&db, &query_embedding, 5)?;
+
+    // Build context from search results
+    let mut context_parts = Vec::new();
+    for (snippet, score) in &similar {
+        if *score < 0.3 {
+            continue;
+        }
+        context_parts.push(format!(
+            "### {} (Relevance: {:.0}%)\n**Problem:** {}\n{}",
+            snippet.title,
+            score * 100.0,
+            snippet.problem,
+            snippet.code_preview.as_deref().map(|c| format!("**Code preview:** ```\n{}\n```", c)).unwrap_or_default(),
+        ));
+    }
+
+    let snippets_context = if context_parts.is_empty() {
+        "No relevant snippets found in the knowledge base.".to_string()
+    } else {
+        context_parts.join("\n\n")
+    };
+
+    // Build snippet-specific context if provided
+    let snippet_section = match snippet_context {
+        Some(ctx) => format!(
+            "\n\nThe user is currently viewing this snippet:\n**Title:** {}\n**Problem:** {}\n{}{}\n",
+            ctx.title,
+            ctx.problem,
+            ctx.solution.map(|s| format!("**Solution:** {}\n", s)).unwrap_or_default(),
+            ctx.code.map(|c| format!("**Code:**\n```\n{}\n```\n", c)).unwrap_or_default(),
+        ),
+        None => String::new(),
+    };
+
+    let prompt = format!(
+        r#"You are a recall assistant for a developer's code snippet knowledge base.
+The user has previously recorded solutions to programming problems.
+Your job is to help them find and recall relevant information from their notes.
+
+Based on the following relevant snippets from their knowledge base, answer the user's question.
+If no relevant snippets are found, let the user know.
+Always reference which snippet(s) you're drawing from.
+
+## Relevant snippets from knowledge base:
+{snippets_context}
+{snippet_section}
+## User question:
+{message}
+
+## Your answer:"#
+    );
+
+    ollama::generate(&prompt, &settings.llm_model, &settings.ollama_base_url).await
 }
 
 fn parse_tags_from_response(response: &str) -> Result<Vec<String>, String> {

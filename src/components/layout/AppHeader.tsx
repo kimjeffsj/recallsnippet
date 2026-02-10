@@ -24,7 +24,7 @@ export function AppHeader() {
     <header className="h-14 border-b border-border bg-card flex items-center px-4 justify-between shrink-0 z-20">
       {/* Logo */}
       <div className="flex items-center gap-2.5 w-56">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/20">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-neutral-600 to-neutral-800 dark:from-neutral-300 dark:to-neutral-500 flex items-center justify-center shadow-lg shadow-foreground/10">
           <Code2 className="h-4 w-4 text-white" />
         </div>
         <span className="font-bold text-lg tracking-tight">RecallSnippet</span>

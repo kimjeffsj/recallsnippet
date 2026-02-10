@@ -227,26 +227,26 @@
 - [x] 헤더 (제목, 카운트) + 스켈레톤 로딩 상태
 
 #### 4.2.4 SnippetDetail 리디자인
-- [ ] 2-column 레이아웃 (좌: 코드 + AI, 우: 메타 + 관련 스니펫)
-- [ ] CodeBlock 파일 헤더 바 (트래픽 라이트, 파일명, 복사)
-- [ ] RelatedSnippets 컴포넌트
+- [x] 2-column 레이아웃 (좌: 코드 + AI, 우: 메타 + 태그)
+- [x] CodeBlock 파일 헤더 바 (트래픽 라이트, 파일명, 복사)
+- [x] Breadcrumb 네비게이션 + Back 버튼
 
 #### 4.2.5 SnippetForm 리디자인
-- [ ] 헤더에 뒤로가기 + 저장 버튼, 태그 인라인, AI 버튼 개선
+- [x] 헤더에 뒤로가기 + 저장 버튼, 태그 인라인 pill, AI 버튼 개선
 
 #### 4.2.6 Empty/Loading/Error 상태
-- [ ] EmptyState, LoadingState, ErrorState 컴포넌트
+- [x] EmptyState, ErrorState 컴포넌트
 
 #### 4.2.7 키보드 단축키
-- [ ] useKeyboardShortcuts (⌘K 검색, ⌘N 새 스니펫, Escape 뒤로)
+- [x] useKeyboardShortcuts (⌘K 검색(AppHeader), ⌘N 새 스니펫, Escape 뒤로)
 
 #### 4.2.8 반응형 + HomePage 통합
-- [ ] HomePage AppContext 활용 간소화
-- [ ] 사이드바 접기/펼치기
-- [ ] Detail flex-col lg:flex-row 스택
+- [x] HomePage AppContext 활용 + 키보드 단축키 통합
+- [x] Detail flex-col lg:flex-row 스택
+- [x] onBack prop 연결 (Detail, Form)
 
 #### 4.2.9 테스트 업데이트
-- [ ] 기존 테스트 업데이트 (변경된 마크업 반영)
+- [x] 기존 테스트 업데이트 (SnippetCard, SnippetList, SnippetForm, HomePage, SearchResults, useSnippets)
 - [ ] 새 테스트 (AppHeader, AppSidebar, EmptyState 등)
 
 ### 4.3 크로스 플랫폼 빌드

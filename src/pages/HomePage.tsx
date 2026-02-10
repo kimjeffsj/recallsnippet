@@ -17,6 +17,7 @@ import {
   useAppState,
   useAppDispatch,
 } from "@/contexts/AppContext";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { CreateSnippetInput } from "@/lib/types";
 
 function HomeContent() {
@@ -73,6 +74,21 @@ function HomeContent() {
     });
   };
 
+  useKeyboardShortcuts({
+    onNewSnippet: () => dispatch({ type: "NAVIGATE_TO_CREATE" }),
+    onEscape: () => {
+      if (view !== "list") {
+        if (view === "detail") {
+          dispatch({ type: "NAVIGATE_TO_LIST" });
+        } else if (selectedId) {
+          dispatch({ type: "SET_VIEW", view: "detail" });
+        } else {
+          dispatch({ type: "NAVIGATE_TO_LIST" });
+        }
+      }
+    },
+  });
+
   const handleBack = () => {
     if (view === "detail") {
       dispatch({ type: "NAVIGATE_TO_LIST" });
@@ -116,6 +132,7 @@ function HomeContent() {
             snippet={selectedSnippet}
             onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
+            onBack={handleBack}
           />
         );
 

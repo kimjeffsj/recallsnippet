@@ -102,7 +102,7 @@ describe("SnippetForm", () => {
     const handleCancel = vi.fn();
     renderForm({ onCancel: handleCancel });
 
-    fireEvent.click(screen.getByText("Cancel"));
+    fireEvent.click(screen.getByLabelText("Go back"));
     expect(handleCancel).toHaveBeenCalled();
   });
 

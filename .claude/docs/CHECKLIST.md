@@ -249,6 +249,11 @@
 - [x] 기존 테스트 업데이트 (SnippetCard, SnippetList, SnippetForm, HomePage, SearchResults, useSnippets)
 - [x] 새 테스트 (AppHeader 5개, AppSidebar 3개, EmptyState 4개, ErrorState 4개)
 
+#### 4.2.10 AI Section & Provider UI
+- [x] AppSidebar AI Section (상태 + 클릭 가능 모델명 + ⌘J 힌트)
+- [x] SettingsDialog Cloud Provider 선택 UI skeleton
+- [x] 테스트 업데이트 (AppSidebar 모델 클릭 테스트)
+
 ### 4.3 크로스 플랫폼 빌드
 
 - [ ] 앱 아이콘 생성
@@ -316,3 +321,4 @@
 | 2026-02-09 | 4.2.2-3 | SnippetCard + SnippetList       | 카드형 디자인 + grid 레이아웃 + 스켈레톤     |
 | 2026-02-09 | 4.2.4-8 | Detail/Form/CodeBlock 리디자인  | 2-column, 헤더바, 키보드 단축키, 상태 컴포넌트|
 | 2026-02-09 | 4.2.9 | 테스트 업데이트                   | 16개 신규 테스트 (총 129개: Rust 55 + Front 74)|
+| 2026-02-10 | 4.2.10 | AI Section & Provider UI        | 사이드바 AI 섹션 + Settings Provider skeleton + 3개 신규 테스트 (총 152개: Rust 55 + Front 97)|

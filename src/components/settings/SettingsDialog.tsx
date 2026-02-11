@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
 import { useOllamaStatus } from "@/hooks/useAI";
@@ -94,6 +95,46 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               AI & Models
             </h3>
+
+            {/* Provider Selection */}
+            <div className="space-y-2">
+              <Label>Provider</Label>
+              <Select value="ollama" disabled>
+                <SelectTrigger data-testid="provider-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ollama">
+                    <span className="flex items-center gap-2">
+                      Ollama (Local)
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        Active
+                      </Badge>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="cloud" disabled>
+                    <span className="flex items-center gap-2">
+                      Cloud API
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        Coming Soon
+                      </Badge>
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cloud API Key (hidden, prepared for future) */}
+            {false && (
+              <div className="space-y-2">
+                <Label htmlFor="api-key">API Key</Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder="sk-..."
+                />
+              </div>
+            )}
 
             {/* Connection Status */}
             <div className="flex items-center gap-2">

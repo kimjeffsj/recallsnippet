@@ -37,7 +37,7 @@ export function SpotlightChat({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
   // Reset on close, focus on open
   useEffect(() => {
@@ -150,7 +150,9 @@ export function SpotlightChat({
                 </p>
                 {snippetContext && (
                   <div className="mt-3 px-3 py-2 bg-muted rounded-lg text-xs text-left inline-block max-w-sm">
-                    <span className="font-medium text-foreground">Context:</span>{" "}
+                    <span className="font-medium text-foreground">
+                      Context:
+                    </span>{" "}
                     {snippetContext.title}
                   </div>
                 )}
@@ -163,7 +165,7 @@ export function SpotlightChat({
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-xl px-4 py-3 overflow-hidden min-w-0 break-words ${
+                  className={`max-w-[85%] rounded-xl px-4 py-3 overflow-hidden min-w-0 wrap-break-words ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"

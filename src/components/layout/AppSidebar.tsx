@@ -4,7 +4,7 @@ import { useSnippets } from "@/hooks/useSnippets";
 import { useOllamaStatus } from "@/hooks/useAI";
 import { useSettings } from "@/hooks/useSettings";
 import { getLanguageInfo } from "@/lib/language-colors";
-import { Library, Heart, Clock, Trash2 } from "lucide-react";
+import { Library, Heart, Clock, Trash2, Sparkles } from "lucide-react";
 
 export function AppSidebar() {
   const { filterLanguage, view } = useAppState();
@@ -129,9 +129,14 @@ export function AppSidebar() {
         )}
       </div>
 
-      {/* Footer - Ollama Status */}
-      <div className="p-3 border-t border-border">
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-muted">
+      {/* Footer - AI Section */}
+      <div className="p-3 border-t border-border space-y-2">
+        {/* Ollama Status - clickable to open Settings */}
+        <button
+          onClick={() => dispatch({ type: "SET_SETTINGS_OPEN", open: true })}
+          className="group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-muted hover:bg-accent transition-colors text-left"
+          data-testid="model-card"
+        >
           <div className="relative flex h-2.5 w-2.5">
             {isConnected && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -142,12 +147,28 @@ export function AppSidebar() {
               }`}
             />
           </div>
-          <div>
-            <p className="text-xs font-semibold">Ollama AI</p>
-            <p className="text-[10px] text-muted-foreground">
-              {settings?.llmModel ?? "Loading..."}
-            </p>
+          <div className="relative overflow-hidden">
+            <div className="transition-all duration-200 ease-in-out group-hover:opacity-0 group-hover:-translate-y-1">
+              <p className="text-xs font-semibold">Ollama AI</p>
+              <p className="text-[10px] text-muted-foreground">
+                {settings?.llmModel ?? "Loading..."}
+              </p>
+            </div>
+            <div className="absolute inset-0 flex items-center opacity-0 translate-y-1 transition-all duration-200 ease-in-out group-hover:opacity-100 group-hover:translate-y-0">
+              <p className="text-xs font-semibold text-primary">Settings</p>
+            </div>
           </div>
+        </button>
+
+        {/* Ask AI Hint */}
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Sparkles className="h-3 w-3" />
+            <span>Ask AI</span>
+          </div>
+          <kbd className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+            ⌘J
+          </kbd>
         </div>
       </div>
     </aside>

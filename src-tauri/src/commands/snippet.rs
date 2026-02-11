@@ -146,7 +146,7 @@ pub fn list_snippets(
             let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = vec![];
 
             if let Some(ref lang) = filter.language {
-                sql.push_str(" AND code_language = ?");
+                sql.push_str(" AND LOWER(code_language) = LOWER(?)");
                 params.push(Box::new(lang.clone()));
             }
 

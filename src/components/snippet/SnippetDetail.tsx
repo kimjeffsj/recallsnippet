@@ -75,7 +75,7 @@ export function SnippetDetail({
             {snippet.codeLanguage && (
               <>
                 <span className="text-muted-foreground/50 mx-1">/</span>
-                <span className="text-foreground">{snippet.codeLanguage}</span>
+                <span className="text-foreground capitalize">{snippet.codeLanguage}</span>
               </>
             )}
           </nav>
@@ -114,7 +114,7 @@ export function SnippetDetail({
             <div className="flex items-center gap-2 flex-wrap">
               {snippet.codeLanguage && (
                 <span
-                  className="px-2.5 py-1 rounded-full text-xs font-medium border"
+                  className="px-2.5 py-1 rounded-full text-xs font-medium border capitalize"
                   style={{
                     backgroundColor: `${langInfo.color}15`,
                     color: langInfo.color,

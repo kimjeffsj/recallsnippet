@@ -15,7 +15,9 @@ export function AppSidebar() {
 
   const languages = [
     ...new Set(
-      snippets.map((s) => s.codeLanguage).filter(Boolean) as string[],
+      snippets
+        .map((s) => s.codeLanguage?.toLowerCase())
+        .filter(Boolean) as string[],
     ),
   ];
 

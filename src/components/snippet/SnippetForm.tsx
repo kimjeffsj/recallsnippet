@@ -91,7 +91,7 @@ export function SnippetForm({
       problem: problem.trim(),
       solution: solution.trim() || undefined,
       code: code.trim() || undefined,
-      codeLanguage: codeLanguage.trim() || undefined,
+      codeLanguage: codeLanguage.trim().toLowerCase() || undefined,
       referenceUrl: referenceUrl.trim() || undefined,
       tagIds: selectedTagIds,
     });

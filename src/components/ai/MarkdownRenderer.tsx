@@ -7,6 +7,12 @@ interface MarkdownRendererProps {
   content: string;
 }
 
+function normalizeMarkdown(content: string): string {
+  return content
+    .replace(/([^\n])\n(```)/g, "$1\n\n$2")
+    .replace(/(```[^\n]*\n[\s\S]*?```)\n([^\n])/g, "$1\n\n$2");
+}
+
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
@@ -14,12 +20,13 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       components={{
         code({ className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || "");
-          const isInline = !match && !className;
+          const hasNewline = String(children).includes("\n");
+          const isInline = !match && !className && !hasNewline;
 
           if (isInline) {
             return (
               <code
-                className="px-1.5 py-0.5 rounded text-xs bg-muted font-mono"
+                className="px-1.5 py-0.5 rounded text-xs bg-black/20 font-mono"
                 {...props}
               >
                 {children}
@@ -36,6 +43,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 padding: "1rem",
                 borderRadius: "0.5rem",
                 fontSize: "0.8125rem",
+                overflowX: "auto",
               }}
               PreTag="div"
             >
@@ -91,11 +99,11 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           );
         },
         pre({ children }) {
-          return <div className="my-2">{children}</div>;
+          return <div className="my-2 overflow-x-auto max-w-full">{children}</div>;
         },
       }}
     >
-      {content}
+      {normalizeMarkdown(content)}
     </ReactMarkdown>
   );
 }

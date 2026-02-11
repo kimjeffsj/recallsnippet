@@ -2,12 +2,22 @@ import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppState, useAppDispatch } from "@/contexts/AppContext";
-import { Plus, Settings, Search, Code2 } from "lucide-react";
+import { Plus, Settings, Search } from "lucide-react";
+import { useSemanticSearch } from "@/hooks/useSearch";
+import { SearchDropdown } from "@/components/search/SearchDropdown";
+import logo from "@/assets/recallsnippet_logo.png";
 
 export function AppHeader() {
   const { searchQuery } = useAppState();
   const dispatch = useAppDispatch();
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const isSearching = searchQuery.length > 2;
+  const {
+    data: searchResults = [],
+    isLoading: searchLoading,
+    isError: searchError,
+  } = useSemanticSearch(searchQuery);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -20,18 +30,30 @@ export function AppHeader() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const handleSelect = (id: string) => {
+    dispatch({ type: "SET_SEARCH_QUERY", query: "" });
+    dispatch({ type: "SELECT_SNIPPET", id });
+  };
+
+  const handleCloseDropdown = () => {
+    dispatch({ type: "SET_SEARCH_QUERY", query: "" });
+    searchRef.current?.blur();
+  };
+
   return (
     <header className="h-14 border-b border-border bg-card flex items-center px-4 justify-between shrink-0 z-20">
       {/* Logo */}
       <div className="flex items-center gap-2.5 w-56">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-neutral-600 to-neutral-800 dark:from-neutral-300 dark:to-neutral-500 flex items-center justify-center shadow-lg shadow-foreground/10">
-          <Code2 className="h-4 w-4 text-white" />
-        </div>
+        <img
+          src={logo}
+          alt="RecallSnippet Logo"
+          className="h-8 w-8 rounded-lg object-contain"
+        />
         <span className="font-bold text-lg tracking-tight">RecallSnippet</span>
       </div>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-2xl px-4">
+      <div className="flex-1 max-w-2xl px-4 relative">
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
@@ -47,6 +69,15 @@ export function AppHeader() {
             ⌘K
           </span>
         </div>
+        {isSearching && (
+          <SearchDropdown
+            results={searchResults}
+            isLoading={searchLoading}
+            isError={searchError}
+            onSelect={handleSelect}
+            onClose={handleCloseDropdown}
+          />
+        )}
       </div>
 
       {/* Actions */}

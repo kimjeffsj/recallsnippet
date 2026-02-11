@@ -3,7 +3,6 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { SnippetList } from "@/components/snippet/SnippetList";
 import { SnippetDetail } from "@/components/snippet/SnippetDetail";
 import { SnippetForm } from "@/components/snippet/SnippetForm";
-import { SearchResults } from "@/components/search/SearchResults";
 import { SpotlightChat } from "@/components/ai/SpotlightChat";
 import {
   useSnippets,
@@ -13,7 +12,6 @@ import {
   useDeleteSnippet,
 } from "@/hooks/useSnippets";
 import { useTags } from "@/hooks/useTags";
-import { useSemanticSearch } from "@/hooks/useSearch";
 import {
   AppProvider,
   useAppState,
@@ -23,7 +21,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { CreateSnippetInput, SnippetContext } from "@/lib/types";
 
 function HomeContent() {
-  const { view, selectedId, searchQuery, filterLanguage } = useAppState();
+  const { view, selectedId, filterLanguage } = useAppState();
   const dispatch = useAppDispatch();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [spotlightContext, setSpotlightContext] = useState<SnippetContext | undefined>();
@@ -33,13 +31,6 @@ function HomeContent() {
   );
   const { data: selectedSnippet } = useSnippet(selectedId);
   const { data: tags = [] } = useTags();
-  const {
-    data: searchResults = [],
-    isLoading: searchLoading,
-    isError: searchError,
-  } = useSemanticSearch(searchQuery);
-
-  const isSearching = searchQuery.length > 2;
 
   const createMutation = useCreateSnippet();
   const updateMutation = useUpdateSnippet();
@@ -156,31 +147,6 @@ function HomeContent() {
         );
 
       default:
-        if (isSearching) {
-          if (searchError) {
-            return (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <div className="text-center space-y-2">
-                  <p>AI search requires Ollama to be running.</p>
-                  <p className="text-xs">
-                    Run{" "}
-                    <code className="bg-muted px-1 py-0.5 rounded">
-                      ollama serve
-                    </code>{" "}
-                    to enable semantic search.
-                  </p>
-                </div>
-              </div>
-            );
-          }
-          return (
-            <SearchResults
-              results={searchResults}
-              onSelect={handleSelect}
-              isLoading={searchLoading}
-            />
-          );
-        }
         return (
           <SnippetList
             snippets={snippets}

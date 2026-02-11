@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiApi } from "@/lib/tauri";
@@ -118,7 +117,7 @@ export function SpotlightChat({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0"
+        className="sm:max-w-2xl max-h-[80vh] flex flex-col gap-0 p-0 overflow-hidden"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">Recall Assistant</DialogTitle>
@@ -140,8 +139,8 @@ export function SpotlightChat({
         </div>
 
         {/* Messages area */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
-          <div ref={scrollRef} className="p-4 space-y-4">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+          <div className="p-4 space-y-4">
             {messages.length === 0 && !isLoading && (
               <div className="text-center py-8 text-muted-foreground">
                 <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
@@ -164,7 +163,7 @@ export function SpotlightChat({
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-xl px-4 py-3 ${
+                  className={`max-w-[85%] rounded-xl px-4 py-3 overflow-hidden min-w-0 break-words ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
@@ -201,7 +200,7 @@ export function SpotlightChat({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Input area */}
         <div className="border-t border-border px-4 py-3">

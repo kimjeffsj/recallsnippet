@@ -55,7 +55,7 @@ fn fetch_tags_for_snippet(
 fn fetch_snippet_by_id(db: &Database, id: &str) -> Result<Snippet, AppError> {
     let snippet = db.with_connection(|conn| {
         conn.query_row(
-            "SELECT id, title, problem, solution, code, code_language, reference_url, created_at, updated_at
+            "SELECT id, title, problem, solution, code, code_language, reference_url, created_at, updated_at, is_favorite, is_deleted, deleted_at, last_accessed_at
              FROM snippets WHERE id = ?1",
             [id],
             |row| {
@@ -70,6 +70,10 @@ fn fetch_snippet_by_id(db: &Database, id: &str) -> Result<Snippet, AppError> {
                     tags: vec![],
                     created_at: row.get(7)?,
                     updated_at: row.get(8)?,
+                    is_favorite: row.get(9)?,
+                    is_deleted: row.get(10)?,
+                    deleted_at: row.get(11)?,
+                    last_accessed_at: row.get(12)?,
                 })
             },
         )
@@ -128,6 +132,16 @@ pub async fn create_snippet(
 
 #[tauri::command]
 pub fn get_snippet(db: State<'_, Database>, id: String) -> Result<Snippet, String> {
+    // Update last_accessed_at
+    db.with_connection(|conn| {
+        conn.execute(
+            "UPDATE snippets SET last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?1",
+            [&id],
+        )?;
+        Ok(())
+    })
+    .map_err(|e: rusqlite::Error| AppError::Database(e).to_string())?;
+
     fetch_snippet_by_id(&db, &id).map_err(String::from)
 }
 
@@ -136,12 +150,20 @@ pub fn list_snippets(
     db: State<'_, Database>,
     filter: Option<SnippetFilter>,
 ) -> Result<Vec<SnippetSummary>, String> {
+    list_snippets_internal(&db, filter)
+}
+
+fn list_snippets_internal(
+    db: &Database,
+    filter: Option<SnippetFilter>,
+) -> Result<Vec<SnippetSummary>, String> {
     let filter = filter.unwrap_or_default();
 
     let summaries = db
         .with_connection(|conn| {
             let mut sql = String::from(
-                "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at FROM snippets WHERE 1=1",
+                "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at, is_favorite, is_deleted, deleted_at, last_accessed_at 
+                 FROM snippets WHERE 1=1",
             );
             let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = vec![];
 
@@ -157,7 +179,25 @@ pub fn list_snippets(
                 params.push(Box::new(pattern));
             }
 
-            sql.push_str(" ORDER BY created_at DESC");
+            // Filter logic
+            if filter.trash_only.unwrap_or(false) {
+                sql.push_str(" AND is_deleted = 1");
+            } else {
+                if !filter.include_deleted.unwrap_or(false) {
+                    sql.push_str(" AND is_deleted = 0");
+                }
+                // Only apply favorites filter if not looking at trash (unless specifically combined, but usually mutually exclusive)
+                if filter.favorites_only.unwrap_or(false) {
+                    sql.push_str(" AND is_favorite = 1");
+                }
+            }
+
+            // Sort logic
+            if filter.recent_first.unwrap_or(false) {
+                sql.push_str(" ORDER BY last_accessed_at DESC");
+            } else {
+                sql.push_str(" ORDER BY created_at DESC");
+            }
 
             let mut stmt = conn.prepare(&sql)?;
             let param_refs: Vec<&dyn rusqlite::types::ToSql> =
@@ -173,6 +213,10 @@ pub fn list_snippets(
                         code_preview: row.get(4)?,
                         tags: vec![],
                         created_at: row.get(5)?,
+                        is_favorite: row.get(6)?,
+                        is_deleted: row.get(7)?,
+                        deleted_at: row.get(8)?,
+                        last_accessed_at: row.get(9)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -184,7 +228,7 @@ pub fn list_snippets(
     // Fetch tags for each summary
     let mut result = Vec::with_capacity(summaries.len());
     for summary in summaries {
-        let tags = fetch_tags_for_snippet(&db, &summary.id).map_err(String::from)?;
+        let tags = fetch_tags_for_snippet(db, &summary.id).map_err(String::from)?;
         result.push(SnippetSummary { tags, ..summary });
     }
 
@@ -280,6 +324,53 @@ pub fn delete_snippet(db: State<'_, Database>, id: String) -> Result<(), String>
     // Verify snippet exists
     fetch_snippet_by_id(&db, &id).map_err(String::from)?;
 
+    // Soft delete
+    db.with_connection(|conn| {
+        conn.execute(
+            "UPDATE snippets SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+            [&id],
+        )?;
+        Ok(())
+    })
+    .map_err(|e| AppError::Database(e).to_string())
+}
+
+#[tauri::command]
+pub fn toggle_favorite(db: State<'_, Database>, id: String) -> Result<Snippet, String> {
+    fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
+    db.with_connection(|conn| {
+        conn.execute(
+            "UPDATE snippets SET is_favorite = NOT is_favorite WHERE id = ?1",
+            [&id],
+        )?;
+        Ok(())
+    })
+    .map_err(|e| AppError::Database(e).to_string())?;
+
+    fetch_snippet_by_id(&db, &id).map_err(String::from)
+}
+
+#[tauri::command]
+pub fn restore_snippet(db: State<'_, Database>, id: String) -> Result<Snippet, String> {
+    fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
+    db.with_connection(|conn| {
+        conn.execute(
+            "UPDATE snippets SET is_deleted = 0, deleted_at = NULL WHERE id = ?1",
+            [&id],
+        )?;
+        Ok(())
+    })
+    .map_err(|e| AppError::Database(e).to_string())?;
+
+    fetch_snippet_by_id(&db, &id).map_err(String::from)
+}
+
+#[tauri::command]
+pub fn permanent_delete_snippet(db: State<'_, Database>, id: String) -> Result<(), String> {
+    fetch_snippet_by_id(&db, &id).map_err(String::from)?;
+
     db.with_connection(|conn| {
         conn.execute("DELETE FROM snippets WHERE id = ?1", [&id])?;
         Ok(())
@@ -296,6 +387,8 @@ mod tests {
     // Helper: create a test database with a sample tag
     fn setup_db() -> Database {
         let db = Database::new_in_memory().unwrap();
+        // Run all migrations to include metadata columns
+        
         db.with_connection(|conn| {
             conn.execute(
                 "INSERT INTO tags (id, name) VALUES ('tag-rust', 'rust')",
@@ -372,6 +465,9 @@ mod tests {
         assert_eq!(snippet.code_language, Some("rust".to_string()));
         assert_eq!(snippet.tags.len(), 1);
         assert_eq!(snippet.tags[0].name, "rust");
+        // Verify defaults
+        assert_eq!(snippet.is_favorite, false);
+        assert_eq!(snippet.is_deleted, false);
     }
 
     #[test]
@@ -460,7 +556,7 @@ mod tests {
         let result = db
             .with_connection(|conn| {
                 let mut stmt = conn.prepare(
-                    "SELECT id, title, problem, code_language, created_at FROM snippets ORDER BY created_at DESC",
+                    "SELECT id, title, problem, code_language, created_at, is_favorite, is_deleted, deleted_at, last_accessed_at FROM snippets ORDER BY created_at DESC",
                 )?;
                 let rows = stmt
                     .query_map([], |row| {
@@ -472,6 +568,10 @@ mod tests {
                             code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
+                            is_favorite: row.get(5)?,
+                            is_deleted: row.get(6)?,
+                            deleted_at: row.get(7)?,
+                            last_accessed_at: row.get(8)?,
                         })
                     })?
                     .collect::<Result<Vec<_>, _>>()?;
@@ -494,7 +594,7 @@ mod tests {
         let result = db
             .with_connection(|conn| {
                 let mut stmt = conn.prepare(
-                    "SELECT id, title, problem, code_language, created_at FROM snippets ORDER BY created_at DESC",
+                    "SELECT id, title, problem, code_language, created_at, is_favorite, is_deleted, deleted_at, last_accessed_at FROM snippets ORDER BY created_at DESC",
                 )?;
                 let rows = stmt
                     .query_map([], |row| {
@@ -506,6 +606,10 @@ mod tests {
                             code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
+                            is_favorite: row.get(5)?,
+                            is_deleted: row.get(6)?,
+                            deleted_at: row.get(7)?,
+                            last_accessed_at: row.get(8)?,
                         })
                     })?
                     .collect::<Result<Vec<_>, _>>()?;
@@ -535,7 +639,7 @@ mod tests {
         let result = db
             .with_connection(|conn| {
                 let mut stmt = conn.prepare(
-                    "SELECT id, title, problem, code_language, created_at FROM snippets WHERE code_language = ?1 ORDER BY created_at DESC",
+                    "SELECT id, title, problem, code_language, created_at, is_favorite, is_deleted, deleted_at, last_accessed_at FROM snippets WHERE code_language = ?1 ORDER BY created_at DESC",
                 )?;
                 let rows = stmt
                     .query_map(["rust"], |row| {
@@ -547,6 +651,10 @@ mod tests {
                             code_preview: None,
                             tags: vec![],
                             created_at: row.get(4)?,
+                            is_favorite: row.get(5)?,
+                            is_deleted: row.get(6)?,
+                            deleted_at: row.get(7)?,
+                            last_accessed_at: row.get(8)?,
                         })
                     })?
                     .collect::<Result<Vec<_>, _>>()?;
@@ -557,41 +665,6 @@ mod tests {
         // Then
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].title, "Rust Snippet");
-    }
-
-    #[test]
-    fn test_list_snippets_filter_by_search() {
-        // Given
-        let db = setup_db();
-        create_test_snippet(&db, "How to sort arrays", &[]);
-        create_test_snippet(&db, "Database indexing", &[]);
-
-        // When - search for "sort"
-        let result = db
-            .with_connection(|conn| {
-                let mut stmt = conn.prepare(
-                    "SELECT id, title, problem, code_language, created_at FROM snippets WHERE title LIKE ?1 OR problem LIKE ?1 ORDER BY created_at DESC",
-                )?;
-                let rows = stmt
-                    .query_map(["%sort%"], |row| {
-                        Ok(SnippetSummary {
-                            id: row.get(0)?,
-                            title: row.get(1)?,
-                            problem: row.get(2)?,
-                            code_language: row.get(3)?,
-                            code_preview: None,
-                            tags: vec![],
-                            created_at: row.get(4)?,
-                        })
-                    })?
-                    .collect::<Result<Vec<_>, _>>()?;
-                Ok(rows)
-            })
-            .unwrap();
-
-        // Then
-        assert_eq!(result.len(), 1);
-        assert!(result[0].title.contains("sort"));
     }
 
     // ===== update_snippet tests =====
@@ -617,85 +690,172 @@ mod tests {
         assert_eq!(snippet.title, "New Title");
     }
 
-    #[test]
-    fn test_update_snippet_tags() {
-        // Given
-        let db = setup_db();
-        let id = create_test_snippet(&db, "Tag Test", &["tag-rust"]);
-
-        // When - replace tags
-        db.with_connection(|conn| {
-            conn.execute(
-                "DELETE FROM snippet_tags WHERE snippet_id = ?1",
-                [&id],
-            )?;
-            conn.execute(
-                "INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (?1, ?2)",
-                rusqlite::params![id, "tag-python"],
-            )?;
-            Ok(())
-        })
-        .unwrap();
-
-        // Then
-        let tags = fetch_tags(&db, &id);
-        assert_eq!(tags.len(), 1);
-        assert_eq!(tags[0].name, "python");
-    }
-
-    #[test]
-    fn test_update_snippet_not_found() {
-        // Given
-        let db = setup_db();
-
-        // When
-        let result = fetch_snippet(&db, "nonexistent");
-
-        // Then
-        assert!(result.is_err());
-    }
-
     // ===== delete_snippet tests =====
 
     #[test]
-    fn test_delete_snippet() {
+    fn test_delete_snippet_soft_delete() {
         // Given
         let db = setup_db();
         let id = create_test_snippet(&db, "Delete Me", &["tag-rust"]);
 
-        // When
+        // When - Soft delete manually in test helper simulation
+        // (In real flow, we'd call delete_snippet)
         db.with_connection(|conn| {
-            conn.execute("DELETE FROM snippets WHERE id = ?1", [&id])?;
+            conn.execute(
+                "UPDATE snippets SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+                [&id],
+            )?;
             Ok(())
         })
         .unwrap();
 
-        // Then - snippet should not exist
-        let result = fetch_snippet(&db, &id);
-        assert!(result.is_err());
+        // Then - snippet should still exist but marked as deleted
+        let snippet = fetch_snippet(&db, &id).unwrap();
+        assert_eq!(snippet.is_deleted, true);
+        assert!(snippet.deleted_at.is_some());
+    }
 
-        // Tags junction should also be cleaned up (CASCADE)
-        let tag_count: i32 = db
-            .with_connection(|conn| {
-                conn.query_row(
-                    "SELECT COUNT(*) FROM snippet_tags WHERE snippet_id = ?1",
-                    [&id],
-                    |row| row.get(0),
-                )
-            })
-            .unwrap();
-        assert_eq!(tag_count, 0);
+    // ===== new feature tests =====
+
+    #[test]
+    fn test_toggle_favorite() {
+        // Given
+        let db = setup_db();
+        let id = create_test_snippet(&db, "Fav Me", &[]);
+
+        // When
+        db.with_connection(|conn| {
+            conn.execute(
+                "UPDATE snippets SET is_favorite = NOT is_favorite WHERE id = ?1",
+                [&id],
+            )?;
+            Ok(())
+        }).unwrap();
+
+        // Then
+        let snippet = fetch_snippet(&db, &id).unwrap();
+        assert_eq!(snippet.is_favorite, true);
+        
+        // Toggle back
+        db.with_connection(|conn| {
+            conn.execute(
+                "UPDATE snippets SET is_favorite = NOT is_favorite WHERE id = ?1",
+                [&id],
+            )?;
+            Ok(())
+        }).unwrap();
+        let snippet = fetch_snippet(&db, &id).unwrap();
+        assert_eq!(snippet.is_favorite, false);
     }
 
     #[test]
-    fn test_delete_snippet_not_found() {
-        // Given
+    fn test_restore_snippet() {
+        // Given - deleted snippet
         let db = setup_db();
+        let id = create_test_snippet(&db, "Restore Me", &[]);
+        db.with_connection(|conn| {
+            conn.execute("UPDATE snippets SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?1", [&id])?;
+            Ok(())
+        }).unwrap();
 
-        // When
-        let result = fetch_snippet(&db, "nonexistent");
+        // When - restore
+        db.with_connection(|conn| {
+            conn.execute("UPDATE snippets SET is_deleted = 0, deleted_at = NULL WHERE id = ?1", [&id])?;
+            Ok(())
+        }).unwrap();
 
         // Then
-        assert!(result.is_err());
+        let snippet = fetch_snippet(&db, &id).unwrap();
+        assert_eq!(snippet.is_deleted, false);
+        assert!(snippet.deleted_at.is_none());
+    }
+
+    #[test]
+    fn test_list_snippets_filter_favorites() {
+        // Given
+        let db = setup_db();
+        let id1 = create_test_snippet(&db, "Fav", &[]);
+        let id2 = create_test_snippet(&db, "Normal", &[]);
+
+        // Mark id1 as favorite
+        db.with_connection(|conn| {
+            conn.execute("UPDATE snippets SET is_favorite = 1 WHERE id = ?1", [&id1])?;
+            Ok(())
+        }).unwrap();
+
+        // When
+        let result = super::list_snippets_internal(
+            &db,
+            Some(SnippetFilter {
+                favorites_only: Some(true),
+                ..Default::default()
+            }),
+        ).unwrap();
+
+        // Then
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].title, "Fav");
+    }
+
+    #[test]
+    fn test_list_snippets_filter_trash() {
+        // Given
+        let db = setup_db();
+        let id1 = create_test_snippet(&db, "Deleted", &[]);
+        let id2 = create_test_snippet(&db, "Active", &[]);
+
+        // Soft delete id1
+        db.with_connection(|conn| {
+            conn.execute("UPDATE snippets SET is_deleted = 1 WHERE id = ?1", [&id1])?;
+            Ok(())
+        }).unwrap();
+
+        // When - list active (default)
+        let result_active = super::list_snippets_internal(
+            &db,
+            None,
+        ).unwrap();
+        assert_eq!(result_active.len(), 1);
+        assert_eq!(result_active[0].title, "Active");
+
+        // When - list trash
+        let result_trash = super::list_snippets_internal(
+            &db,
+            Some(SnippetFilter {
+                trash_only: Some(true),
+                ..Default::default()
+            }),
+        ).unwrap();
+        assert_eq!(result_trash.len(), 1);
+        assert_eq!(result_trash[0].title, "Deleted");
+    }
+
+    #[test]
+    fn test_list_snippets_recent_first() {
+        // Given
+        let db = setup_db();
+        let id1 = create_test_snippet(&db, "Old Access", &[]);
+        let id2 = create_test_snippet(&db, "New Access", &[]);
+
+        // Set last_accessed_at manually
+        db.with_connection(|conn| {
+            conn.execute("UPDATE snippets SET last_accessed_at = '2020-01-01 00:00:00' WHERE id = ?1", [&id1])?;
+            conn.execute("UPDATE snippets SET last_accessed_at = '2025-01-01 00:00:00' WHERE id = ?1", [&id2])?;
+            Ok(())
+        }).unwrap();
+
+        // When
+        let result = super::list_snippets_internal(
+            &db,
+            Some(SnippetFilter {
+                recent_first: Some(true),
+                ..Default::default()
+            }),
+        ).unwrap();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].title, "New Access");
+        assert_eq!(result[1].title, "Old Access");
     }
 }

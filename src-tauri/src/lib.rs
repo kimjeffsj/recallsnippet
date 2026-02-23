@@ -46,6 +46,9 @@ pub fn run() {
             commands::ai_chat,
             commands::get_settings,
             commands::update_settings,
+            commands::toggle_favorite,
+            commands::restore_snippet,
+            commands::permanent_delete_snippet,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

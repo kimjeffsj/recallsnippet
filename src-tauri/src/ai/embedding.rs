@@ -72,6 +72,10 @@ mod tests {
             tags: vec![],
             created_at: "2026-02-09".to_string(),
             updated_at: "2026-02-09".to_string(),
+            is_favorite: false,
+            is_deleted: false,
+            deleted_at: None,
+            last_accessed_at: None,
         }
     }
 

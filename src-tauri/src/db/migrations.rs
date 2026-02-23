@@ -14,6 +14,7 @@ pub fn run_all(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Run each migration if not already applied
     run_migration(conn, "001_initial_schema", create_initial_schema)?;
     run_migration(conn, "002_settings_table", create_settings_table)?;
+    run_migration(conn, "003_add_snippet_metadata", add_snippet_metadata)?;
 
     Ok(())
 }
@@ -113,6 +114,19 @@ fn create_settings_table(conn: &Connection) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
+fn add_snippet_metadata(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        r#"
+        ALTER TABLE snippets ADD COLUMN is_favorite BOOLEAN NOT NULL DEFAULT 0;
+        ALTER TABLE snippets ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT 0;
+        ALTER TABLE snippets ADD COLUMN deleted_at DATETIME;
+        ALTER TABLE snippets ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;
+        "#
+    )?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -126,14 +140,14 @@ mod tests {
         run_all(&conn).unwrap();
         run_all(&conn).unwrap();
 
-        // Should have exactly two migrations recorded
+        // Should have exactly three migrations recorded
         let count: i32 = conn.query_row(
             "SELECT COUNT(*) FROM migrations",
             [],
             |row| row.get(0),
         ).unwrap();
 
-        assert_eq!(count, 2);
+        assert_eq!(count, 3);
     }
 
     #[test]

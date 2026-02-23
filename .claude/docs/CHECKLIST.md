@@ -260,6 +260,16 @@
 - [x] macOS 빌드 테스트
 - [x] .app 번들 실행 + 설정 저장 확인
 
+### 4.3-1 기능 확장: Favorites, Recent, Trash (New)
+
+- [ ] **DB/Backend**: 마이그레이션 (is_favorite, is_deleted, last_accessed_at)
+- [ ] **Backend**: 커맨드 업데이트 (list 필터링, get 시 access 갱신, soft delete)
+- [ ] **Backend**: 신규 커맨드 (toggle_favorite, restore, permanent_delete)
+- [ ] **Frontend**: 타입/API/훅 업데이트
+- [ ] **UI**: Sidebar 메뉴 연동 (Favorites, Recent, Trash)
+- [ ] **UI**: SnippetCard/Detail 즐겨찾기 토글 & 삭제/복구 액션
+- [ ] **Test**: 백엔드/프론트엔드 테스트 추가
+
 ### 4.4 문서화
 
 - [ ] README.md (소개, 기술 스택, 스크린샷 placeholder, 설치법, 빌드법)

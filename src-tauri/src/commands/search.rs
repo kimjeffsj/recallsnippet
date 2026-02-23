@@ -109,7 +109,8 @@ pub async fn semantic_search(
         let summary = db
             .with_connection(|conn| {
                 conn.query_row(
-                    "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at FROM snippets WHERE id = ?1",
+                    "SELECT id, title, problem, code_language, SUBSTR(code, 1, 200), created_at, is_favorite, is_deleted, deleted_at, last_accessed_at 
+                     FROM snippets WHERE id = ?1",
                     [&snippet_id],
                     |row| {
                         Ok(SnippetSummary {
@@ -120,6 +121,10 @@ pub async fn semantic_search(
                             code_preview: row.get(4)?,
                             tags: vec![],
                             created_at: row.get(5)?,
+                            is_favorite: row.get(6)?,
+                            is_deleted: row.get(7)?,
+                            deleted_at: row.get(8)?,
+                            last_accessed_at: row.get(9)?,
                         })
                     },
                 )

@@ -39,8 +39,15 @@ export function SnippetCard({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(snippet.id);
+        }
+      }}
       onClick={() => onClick(snippet.id)}
       className={cn(
         "group relative bg-card border rounded-xl text-left",
@@ -133,6 +140,6 @@ export function SnippetCard({
           {timeAgo(snippet.createdAt)}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

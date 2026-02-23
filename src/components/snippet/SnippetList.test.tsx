@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
 import { SnippetList } from "./SnippetList";
 import type { SnippetSummary } from "@/lib/types";
@@ -32,9 +33,19 @@ const mockSnippets: SnippetSummary[] = [
   },
 ];
 
+const queryClient = new QueryClient();
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
 describe("SnippetList", () => {
   it("renders loading state with skeleton cards", () => {
-    render(
+    renderWithClient(
       <SnippetList
         snippets={[]}
         selectedId={null}
@@ -49,7 +60,7 @@ describe("SnippetList", () => {
   });
 
   it("renders empty state", () => {
-    render(
+    renderWithClient(
       <SnippetList
         snippets={[]}
         selectedId={null}
@@ -61,7 +72,7 @@ describe("SnippetList", () => {
   });
 
   it("renders snippet cards", () => {
-    render(
+    renderWithClient(
       <SnippetList
         snippets={mockSnippets}
         selectedId={null}
@@ -74,7 +85,7 @@ describe("SnippetList", () => {
   });
 
   it("shows snippet count in header", () => {
-    render(
+    renderWithClient(
       <SnippetList
         snippets={mockSnippets}
         selectedId={null}
@@ -87,7 +98,7 @@ describe("SnippetList", () => {
 
   it("calls onSelect when card is clicked", () => {
     const handleSelect = vi.fn();
-    render(
+    renderWithClient(
       <SnippetList
         snippets={mockSnippets}
         selectedId={null}
@@ -100,7 +111,7 @@ describe("SnippetList", () => {
   });
 
   it("marks selected card", () => {
-    render(
+    renderWithClient(
       <SnippetList
         snippets={mockSnippets}
         selectedId="s1"
@@ -108,8 +119,8 @@ describe("SnippetList", () => {
       />,
     );
 
-    const buttons = screen.getAllByRole("button");
-    expect(buttons[0].className).toContain("border-primary");
-    expect(buttons[1].className).not.toContain("border-primary shadow-lg");
+    const cards = screen.getAllByRole("button").filter(el => el.tagName === "DIV");
+    expect(cards[0].className).toContain("border-primary");
+    expect(cards[1].className).not.toContain("border-primary shadow-lg");
   });
 });

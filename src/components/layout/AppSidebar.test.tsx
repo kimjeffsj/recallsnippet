@@ -48,7 +48,7 @@ describe("AppSidebar", () => {
   it("renders navigation items", () => {
     render(<AppSidebar />, { wrapper: createWrapper() });
     expect(screen.getByText("Library")).toBeInTheDocument();
-    expect(screen.getByText("Favorites")).toBeInTheDocument();
+    expect(screen.getByText("Starred")).toBeInTheDocument();
     expect(screen.getByText("Recent")).toBeInTheDocument();
     expect(screen.getByText("Trash")).toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe("AppSidebar", () => {
   it("navigates to folders when clicked", () => {
     render(<AppSidebar />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByText("Favorites"));
+    fireEvent.click(screen.getByText("Starred"));
     expect(dispatchMock).toHaveBeenCalledWith({
       type: "SET_ACTIVE_FOLDER",
       folder: "favorites",

@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
 import { SnippetCard } from "./SnippetCard";
 import type { SnippetSummary } from "@/lib/types";
@@ -20,9 +21,19 @@ const mockSnippet: SnippetSummary = {
   lastAccessedAt: null,
 };
 
+const queryClient = new QueryClient();
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
 describe("SnippetCard", () => {
   it("renders title and problem", () => {
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
@@ -35,7 +46,7 @@ describe("SnippetCard", () => {
   });
 
   it("renders language badge with abbreviation", () => {
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
@@ -43,7 +54,7 @@ describe("SnippetCard", () => {
   });
 
   it("renders tag badges with hash prefix", () => {
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
@@ -52,7 +63,7 @@ describe("SnippetCard", () => {
   });
 
   it("renders code preview", () => {
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
@@ -61,16 +72,16 @@ describe("SnippetCard", () => {
 
   it("calls onClick with snippet id", () => {
     const handleClick = vi.fn();
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={handleClick} />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByText("Fix async/await error"));
     expect(handleClick).toHaveBeenCalledWith("s1");
   });
 
   it("applies selected styles when isSelected", () => {
-    render(
+    renderWithClient(
       <SnippetCard
         snippet={mockSnippet}
         onClick={() => {}}
@@ -78,8 +89,8 @@ describe("SnippetCard", () => {
       />,
     );
 
-    const button = screen.getByRole("button");
-    expect(button.className).toContain("border-primary");
+    const card = screen.getByText("Fix async/await error").closest("div[role='button']");
+    expect(card?.className).toContain("border-primary");
   });
 
   it("renders fallback badge when codeLanguage is null", () => {
@@ -87,7 +98,7 @@ describe("SnippetCard", () => {
       ...mockSnippet,
       codeLanguage: null,
     };
-    render(
+    renderWithClient(
       <SnippetCard snippet={snippetNoLang} onClick={() => {}} />,
     );
 
@@ -96,7 +107,7 @@ describe("SnippetCard", () => {
   });
 
   it("renders timeAgo for createdAt", () => {
-    render(
+    renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 

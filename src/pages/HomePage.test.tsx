@@ -145,7 +145,9 @@ describe("HomePage", () => {
       expect(screen.getByText("Fix borrow checker")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Fix borrow checker"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Fix borrow checker/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Cannot borrow as mutable")).toBeInTheDocument();
@@ -194,7 +196,9 @@ describe("HomePage", () => {
     });
 
     // Select snippet
-    fireEvent.click(screen.getByText("Fix borrow checker"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Fix borrow checker/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByLabelText("Edit snippet")).toBeInTheDocument();
@@ -216,7 +220,9 @@ describe("HomePage", () => {
     });
 
     // Select snippet
-    fireEvent.click(screen.getByText("Fix borrow checker"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Fix borrow checker/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByLabelText("Delete snippet")).toBeInTheDocument();

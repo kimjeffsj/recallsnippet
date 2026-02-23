@@ -3,6 +3,8 @@ import { getLanguageInfo } from "@/lib/language-colors";
 import { Star, Trash2 } from "lucide-react";
 import type { SnippetSummary } from "@/lib/types";
 import { useToggleFavorite } from "@/hooks/useSnippets";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 interface SnippetCardProps {
   snippet: SnippetSummary;
@@ -113,10 +115,22 @@ export function SnippetCard({
 
         {/* Code preview */}
         {snippet.codePreview && (
-          <div className="bg-background rounded-lg p-3 font-mono text-xs border border-border group-hover:border-muted-foreground/20 transition-colors overflow-hidden">
-            <pre className="whitespace-pre-wrap break-all line-clamp-4 text-muted-foreground">
-              <code>{snippet.codePreview}</code>
-            </pre>
+          <div className="relative rounded-lg border border-border group-hover:border-muted-foreground/20 transition-colors overflow-hidden max-h-[120px] bg-[#282c34]">
+            <SyntaxHighlighter
+              language={snippet.codeLanguage || "text"}
+              style={atomOneDark}
+              customStyle={{
+                margin: 0,
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                fontSize: "0.75rem",
+              }}
+              wrapLines={true}
+              wrapLongLines={true}
+            >
+              {snippet.codePreview}
+            </SyntaxHighlighter>
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#282c34] to-transparent pointer-events-none" />
           </div>
         )}
       </div>

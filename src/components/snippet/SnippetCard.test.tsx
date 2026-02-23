@@ -63,11 +63,11 @@ describe("SnippetCard", () => {
   });
 
   it("renders code preview", () => {
-    renderWithClient(
+    const { container } = renderWithClient(
       <SnippetCard snippet={mockSnippet} onClick={() => {}} />,
     );
 
-    expect(screen.getByText("const result = await fetchData();")).toBeInTheDocument();
+    expect(container.textContent).toContain("const result = await fetchData();");
   });
 
   it("calls onClick with snippet id", () => {

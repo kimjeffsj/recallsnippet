@@ -5,6 +5,7 @@ interface SnippetListProps {
   snippets: SnippetSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onRestore?: (id: string, e: React.MouseEvent) => void;
   isLoading?: boolean;
 }
 
@@ -12,6 +13,7 @@ export function SnippetList({
   snippets,
   selectedId,
   onSelect,
+  onRestore,
   isLoading = false,
 }: SnippetListProps) {
   if (isLoading) {
@@ -72,6 +74,7 @@ export function SnippetList({
             key={snippet.id}
             snippet={snippet}
             onClick={onSelect}
+            onRestore={onRestore}
             isSelected={snippet.id === selectedId}
           />
         ))}

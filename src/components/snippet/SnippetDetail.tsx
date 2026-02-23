@@ -124,13 +124,13 @@ export function SnippetDetail({
             </>
           ) : (
             <Button
-              variant="ghost"
-              size="icon"
+              variant="outline"
+              size="sm"
               onClick={() => onRestore(snippet.id)}
-              aria-label="Restore snippet"
-              className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+              className="text-green-600 hover:text-green-700 hover:bg-green-500/10 border-green-500/20"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Restore Snippet
             </Button>
           )}
           <Button

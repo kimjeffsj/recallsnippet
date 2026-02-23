@@ -115,4 +115,23 @@ describe("SnippetCard", () => {
     const footer = screen.getByText(/ago|just now/i);
     expect(footer).toBeInTheDocument();
   });
+
+  it("calls onRestore when restore button clicked for deleted snippet", () => {
+    const deletedSnippet: SnippetSummary = {
+      ...mockSnippet,
+      isDeleted: true,
+    };
+    const handleRestore = vi.fn();
+    renderWithClient(
+      <SnippetCard
+        snippet={deletedSnippet}
+        onClick={() => {}}
+        onRestore={handleRestore}
+      />,
+    );
+
+    const restoreButton = screen.getByLabelText("Restore Snippet");
+    fireEvent.click(restoreButton);
+    expect(handleRestore).toHaveBeenCalledWith("s1", expect.any(Object));
+  });
 });

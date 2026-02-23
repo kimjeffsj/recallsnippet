@@ -100,6 +100,11 @@ function HomeContent() {
     });
   };
 
+  const handleRestoreFromList = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    restoreMutation.mutate(id);
+  };
+
   const openSpotlight = useCallback((context?: SnippetContext) => {
     setSpotlightContext(context);
     setSpotlightOpen(true);
@@ -185,6 +190,7 @@ function HomeContent() {
             snippets={snippets}
             selectedId={selectedId}
             onSelect={handleSelect}
+            onRestore={handleRestoreFromList}
             isLoading={snippetsLoading}
           />
         );

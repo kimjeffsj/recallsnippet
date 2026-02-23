@@ -191,7 +191,7 @@ describe("SnippetDetail", () => {
       { wrapper: createWrapper() }
     );
 
-    fireEvent.click(screen.getByLabelText("Restore snippet"));
+    fireEvent.click(screen.getByRole("button", { name: /Restore Snippet/i }));
     expect(onRestore).toHaveBeenCalledWith("s1");
   });
 });

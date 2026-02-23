@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { getLanguageInfo } from "@/lib/language-colors";
-import { Star, Trash2 } from "lucide-react";
+import { Star, Trash2, RefreshCw } from "lucide-react";
 import type { SnippetSummary } from "@/lib/types";
 import { useToggleFavorite } from "@/hooks/useSnippets";
 import SyntaxHighlighter from "react-syntax-highlighter";
@@ -9,6 +9,7 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 interface SnippetCardProps {
   snippet: SnippetSummary;
   onClick: (id: string) => void;
+  onRestore?: (id: string, e: React.MouseEvent) => void;
   isSelected?: boolean;
 }
 
@@ -30,6 +31,7 @@ function timeAgo(dateStr: string): string {
 export function SnippetCard({
   snippet,
   onClick,
+  onRestore,
   isSelected = false,
 }: SnippetCardProps) {
   const langInfo = getLanguageInfo(snippet.codeLanguage);
@@ -102,7 +104,18 @@ export function SnippetCard({
                <Star className="h-4 w-4" />
              </button>
             )}
-            {snippet.isDeleted && (
+            {snippet.isDeleted && onRestore && (
+              <button
+                type="button"
+                onClick={(e) => onRestore(snippet.id, e)}
+                className="opacity-0 group-hover:opacity-100 hover:scale-110 transition-all focus:outline-none text-green-500/70 hover:text-green-500 focus:opacity-100 bg-green-500/10 p-1.5 rounded-md"
+                title="Restore Snippet"
+                aria-label="Restore Snippet"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            )}
+            {snippet.isDeleted && !onRestore && (
               <Trash2 className="h-4 w-4 text-destructive" />
             )}
           </div>

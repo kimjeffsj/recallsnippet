@@ -55,3 +55,42 @@ export function useDeleteSnippet() {
     },
   });
 }
+
+export function useToggleFavorite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => snippetApi.toggleFavorite(id),
+    onSuccess: (updatedSnippet) => {
+      queryClient.invalidateQueries({ queryKey: ["snippets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["snippet", updatedSnippet.id],
+      });
+    },
+  });
+}
+
+export function useRestoreSnippet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => snippetApi.restore(id),
+    onSuccess: (updatedSnippet) => {
+      queryClient.invalidateQueries({ queryKey: ["snippets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["snippet", updatedSnippet.id],
+      });
+    },
+  });
+}
+
+export function usePermanentDeleteSnippet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => snippetApi.deletePermanent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["snippets"] });
+    },
+  });
+}

@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { SnippetDetail } from "./SnippetDetail";
 import type { Snippet } from "@/lib/types";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockSnippet: Snippet = {
   id: "s1",
@@ -14,16 +15,42 @@ const mockSnippet: Snippet = {
   tags: [{ id: "t1", name: "async" }],
   createdAt: "2026-02-07",
   updatedAt: "2026-02-08",
+  isFavorite: false,
+  isDeleted: false,
+  deletedAt: null,
+  lastAccessedAt: null,
+};
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  // eslint-disable-next-line react/display-name
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 };
 
 describe("SnippetDetail", () => {
+  const onEdit = vi.fn();
+  const onDelete = vi.fn();
+  const onRestore = vi.fn();
+  const onBack = vi.fn();
+
   it("renders title and problem", () => {
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={() => {}}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
+        onBack={onBack}
       />,
+      { wrapper: createWrapper() }
     );
 
     expect(screen.getByText("Fix async/await error")).toBeInTheDocument();
@@ -36,9 +63,11 @@ describe("SnippetDetail", () => {
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={() => {}}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     expect(screen.getByText("Wrap in try/catch block")).toBeInTheDocument();
@@ -48,9 +77,11 @@ describe("SnippetDetail", () => {
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={() => {}}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     expect(screen.getByText("Code")).toBeInTheDocument();
@@ -60,9 +91,11 @@ describe("SnippetDetail", () => {
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={() => {}}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     const link = screen.getByText("https://example.com/docs");
@@ -74,36 +107,38 @@ describe("SnippetDetail", () => {
   });
 
   it("calls onEdit when edit button clicked", () => {
-    const handleEdit = vi.fn();
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={handleEdit}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     fireEvent.click(screen.getByLabelText("Edit snippet"));
-    expect(handleEdit).toHaveBeenCalledWith("s1");
+    expect(onEdit).toHaveBeenCalledWith("s1");
   });
 
   it("calls onDelete after confirming delete dialog", () => {
-    const handleDelete = vi.fn();
     render(
       <SnippetDetail
         snippet={mockSnippet}
-        onEdit={() => {}}
-        onDelete={handleDelete}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     // Click trash icon opens the dialog
     fireEvent.click(screen.getByLabelText("Delete snippet"));
-    expect(handleDelete).not.toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
 
     // Confirm in the dialog
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(handleDelete).toHaveBeenCalledWith("s1");
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
+    expect(onDelete).toHaveBeenCalledWith("s1");
   });
 
   it("hides optional sections when null", () => {
@@ -116,13 +151,47 @@ describe("SnippetDetail", () => {
     render(
       <SnippetDetail
         snippet={minSnippet}
-        onEdit={() => {}}
-        onDelete={() => {}}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
       />,
+      { wrapper: createWrapper() }
     );
 
     expect(screen.queryByText("Solution")).not.toBeInTheDocument();
     expect(screen.queryByText("Code")).not.toBeInTheDocument();
-    expect(screen.queryByText("Reference")).not.toBeInTheDocument();
+    expect(screen.queryByText("External Link")).not.toBeInTheDocument();
+  });
+
+  it("shows delete permanently when isDeleted is true", () => {
+    const deletedSnippet = { ...mockSnippet, isDeleted: true };
+    render(
+      <SnippetDetail
+        snippet={deletedSnippet}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    fireEvent.click(screen.getByLabelText("Delete snippet"));
+    expect(screen.getByText("Delete Permanently")).toBeInTheDocument();
+  });
+
+  it("calls onRestore when restore button clicked", () => {
+    const deletedSnippet = { ...mockSnippet, isDeleted: true };
+    render(
+      <SnippetDetail
+        snippet={deletedSnippet}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRestore={onRestore}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    fireEvent.click(screen.getByLabelText("Restore snippet"));
+    expect(onRestore).toHaveBeenCalledWith("s1");
   });
 });

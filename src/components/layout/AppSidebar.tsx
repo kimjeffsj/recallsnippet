@@ -1,13 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import { useAppState, useAppDispatch } from "@/contexts/AppContext";
+import { useAppState, useAppDispatch, type Folder } from "@/contexts/AppContext";
 import { useSnippets } from "@/hooks/useSnippets";
 import { useOllamaStatus } from "@/hooks/useAI";
 import { useSettings } from "@/hooks/useSettings";
 import { getLanguageInfo } from "@/lib/language-colors";
-import { Library, Heart, Clock, Trash2, Sparkles } from "lucide-react";
+import { Library, Star, Clock, Trash2, Sparkles } from "lucide-react";
 
 export function AppSidebar() {
-  const { filterLanguage, view } = useAppState();
+  const { filterLanguage, activeFolder } = useAppState();
   const dispatch = useAppDispatch();
   const { data: snippets = [] } = useSnippets();
   const { data: isConnected } = useOllamaStatus();
@@ -25,29 +25,22 @@ export function AppSidebar() {
     {
       icon: Library,
       label: "Library",
-      active: view === "list" && !filterLanguage,
-      onClick: () => dispatch({ type: "NAVIGATE_TO_LIST" }),
+      folder: "library" as Folder,
     },
     {
-      icon: Heart,
-      label: "Favorites",
-      active: false,
-      onClick: () => {},
-      disabled: true,
+      icon: Star,
+      label: "Starred",
+      folder: "favorites" as Folder,
     },
     {
       icon: Clock,
       label: "Recent",
-      active: false,
-      onClick: () => {},
-      disabled: true,
+      folder: "recent" as Folder,
     },
     {
       icon: Trash2,
       label: "Trash",
-      active: false,
-      onClick: () => {},
-      disabled: true,
+      folder: "trash" as Folder,
     },
   ];
 
@@ -56,23 +49,25 @@ export function AppSidebar() {
       <div className="p-3 space-y-5">
         {/* Navigation */}
         <nav className="space-y-0.5">
-          {navItems.map(({ icon: Icon, label, active, onClick, disabled }) => (
-            <button
-              key={label}
-              onClick={onClick}
-              disabled={disabled}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg w-full text-sm transition-colors ${
-                active
-                  ? "bg-primary/10 text-primary font-medium"
-                  : disabled
-                    ? "text-muted-foreground/50 cursor-not-allowed"
+          {navItems.map(({ icon: Icon, label, folder }) => {
+            const isActive = activeFolder === folder && !filterLanguage;
+            return (
+              <button
+                key={label}
+                onClick={() =>
+                  dispatch({ type: "SET_ACTIVE_FOLDER", folder })
+                }
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg w-full text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Languages */}

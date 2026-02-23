@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CodeBlock } from "./CodeBlock";
 import { getLanguageInfo } from "@/lib/language-colors";
+import { useToggleFavorite } from "@/hooks/useSnippets";
 import {
   ArrowLeft,
   Pencil,
@@ -19,6 +20,8 @@ import {
   ExternalLink,
   Clock,
   Sparkles,
+  Star,
+  RefreshCw,
 } from "lucide-react";
 import type { Snippet } from "@/lib/types";
 
@@ -26,6 +29,7 @@ interface SnippetDetailProps {
   snippet: Snippet;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onRestore: (id: string) => void;
   onBack?: () => void;
   onAskAI?: () => void;
 }
@@ -46,11 +50,17 @@ export function SnippetDetail({
   snippet,
   onEdit,
   onDelete,
+  onRestore,
   onBack,
   onAskAI,
 }: SnippetDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const langInfo = getLanguageInfo(snippet.codeLanguage);
+  const toggleFavoriteMutation = useToggleFavorite();
+
+  const handleToggleFavorite = () => {
+    toggleFavoriteMutation.mutate(snippet.id);
+  };
 
   return (
     <div className="p-6 lg:p-8 overflow-y-auto h-full">
@@ -75,21 +85,54 @@ export function SnippetDetail({
             {snippet.codeLanguage && (
               <>
                 <span className="text-muted-foreground/50 mx-1">/</span>
-                <span className="text-foreground capitalize">{snippet.codeLanguage}</span>
+                <span className="text-foreground capitalize">
+                  {snippet.codeLanguage}
+                </span>
               </>
             )}
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(snippet.id)}
-            aria-label="Edit snippet"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!snippet.isDeleted ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleToggleFavorite}
+                aria-label={
+                  snippet.isFavorite ? "Remove from starred" : "Add to starred"
+                }
+                className={
+                  snippet.isFavorite
+                    ? "text-yellow-500 hover:text-yellow-600"
+                    : "text-muted-foreground hover:text-foreground"
+                }
+              >
+                <Star
+                  className={`h-4 w-4 ${snippet.isFavorite ? "fill-current" : ""}`}
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(snippet.id)}
+                aria-label="Edit snippet"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRestore(snippet.id)}
+              aria-label="Restore snippet"
+              className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -112,6 +155,11 @@ export function SnippetDetail({
               {snippet.title}
             </h1>
             <div className="flex items-center gap-2 flex-wrap">
+              {snippet.isDeleted && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                  Deleted
+                </span>
+              )}
               {snippet.codeLanguage && (
                 <span
                   className="px-2.5 py-1 rounded-full text-xs font-medium border capitalize"
@@ -259,10 +307,13 @@ export function SnippetDetail({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete snippet?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {snippet.isDeleted ? "Delete permanently?" : "Move to trash?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{snippet.title}". This action cannot
-              be undone.
+              {snippet.isDeleted
+                ? `This will permanently delete "${snippet.title}". This action cannot be undone.`
+                : `This will move "${snippet.title}" to trash. You can restore it later.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -271,7 +322,7 @@ export function SnippetDetail({
               onClick={() => onDelete(snippet.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {snippet.isDeleted ? "Delete Permanently" : "Move to Trash"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

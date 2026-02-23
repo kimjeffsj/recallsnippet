@@ -28,6 +28,10 @@ pub struct Snippet {
     pub tags: Vec<Tag>,
     pub created_at: String,
     pub updated_at: String,
+    pub is_favorite: bool,
+    pub is_deleted: bool,
+    pub deleted_at: Option<String>,
+    pub last_accessed_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,6 +50,10 @@ pub struct SnippetSummary {
     pub code_preview: Option<String>,
     pub tags: Vec<Tag>,
     pub created_at: String,
+    pub is_favorite: bool,
+    pub is_deleted: bool,
+    pub deleted_at: Option<String>,
+    pub last_accessed_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +85,10 @@ pub struct UpdateSnippetInput {
 pub struct SnippetFilter {
     pub language: Option<String>,
     pub search: Option<String>,
+    pub favorites_only: Option<bool>,
+    pub trash_only: Option<bool>,
+    pub include_deleted: Option<bool>,
+    pub recent_first: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

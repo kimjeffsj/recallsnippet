@@ -9,6 +9,10 @@ export interface Snippet {
   tags: Tag[];
   createdAt: string;
   updatedAt: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  lastAccessedAt: string | null;
 }
 
 export interface SnippetSummary {
@@ -19,6 +23,10 @@ export interface SnippetSummary {
   codePreview: string | null;
   tags: Tag[];
   createdAt: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  lastAccessedAt: string | null;
 }
 
 export interface CreateSnippetInput {
@@ -44,6 +52,10 @@ export interface UpdateSnippetInput {
 export interface SnippetFilter {
   language?: string;
   search?: string;
+  favoritesOnly?: boolean;
+  trashOnly?: boolean;
+  includeDeleted?: boolean;
+  recentFirst?: boolean;
 }
 
 export interface Tag {

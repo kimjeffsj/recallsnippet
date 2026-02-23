@@ -22,11 +22,13 @@ export const snippetApi = {
   list: (filter?: SnippetFilter) =>
     invoke<SnippetSummary[]>("list_snippets", { filter }),
 
-  update: (id: string, input: UpdateSnippetInput) =>
-    invoke<Snippet>("update_snippet", { id, input }),
-
-  delete: (id: string) => invoke<void>("delete_snippet", { id }),
-};
+    update: (id: string, input: UpdateSnippetInput) =>
+      invoke<Snippet>("update_snippet", { id, input }),
+    delete: (id: string) => invoke<void>("delete_snippet", { id }),
+    toggleFavorite: (id: string) => invoke<Snippet>("toggle_favorite", { id }),
+    restore: (id: string) => invoke<Snippet>("restore_snippet", { id }),
+    deletePermanent: (id: string) => invoke<void>("permanent_delete_snippet", { id }),
+  };
 
 export const searchApi = {
   semantic: (query: string, limit?: number) =>

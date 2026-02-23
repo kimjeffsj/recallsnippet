@@ -12,6 +12,10 @@ const mockSnippets: SnippetSummary[] = [
     codePreview: "fn main() {}",
     tags: [],
     createdAt: "2026-02-07",
+    isFavorite: false,
+    isDeleted: false,
+    deletedAt: null,
+    lastAccessedAt: null,
   },
   {
     id: "s2",
@@ -21,6 +25,10 @@ const mockSnippets: SnippetSummary[] = [
     codePreview: null,
     tags: [{ id: "t1", name: "web" }],
     createdAt: "2026-02-08",
+    isFavorite: false,
+    isDeleted: false,
+    deletedAt: null,
+    lastAccessedAt: null,
   },
 ];
 

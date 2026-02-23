@@ -14,6 +14,10 @@ const mockSnippet: SnippetSummary = {
     { id: "t2", name: "error-handling" },
   ],
   createdAt: "2026-02-07",
+  isFavorite: false,
+  isDeleted: false,
+  deletedAt: null,
+  lastAccessedAt: null,
 };
 
 describe("SnippetCard", () => {

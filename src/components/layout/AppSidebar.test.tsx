@@ -1,25 +1,35 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
-import type { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { AppProvider } from "@/contexts/AppContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const mockDispatch = vi.fn();
-
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn((cmd: string) => {
-    if (cmd === "list_snippets") return Promise.resolve([]);
-    if (cmd === "check_ollama_connection") return Promise.resolve(false);
-    return Promise.resolve(undefined);
+// Mock hooks
+vi.mock("@/hooks/useSnippets", () => ({
+  useSnippets: () => ({
+    data: [
+      { codeLanguage: "rust" },
+      { codeLanguage: "typescript" },
+      { codeLanguage: "rust" },
+    ],
   }),
 }));
 
-vi.mock("@/contexts/AppContext", async () => {
-  const actual = await vi.importActual("@/contexts/AppContext");
+vi.mock("@/hooks/useAI", () => ({
+  useOllamaStatus: () => ({ data: true }),
+}));
+
+vi.mock("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: { llmModel: "llama3:8b" } }),
+}));
+
+// Mock dispatch
+const dispatchMock = vi.fn();
+vi.mock("@/contexts/AppContext", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/contexts/AppContext")>();
   return {
     ...actual,
-    useAppDispatch: () => mockDispatch,
+    useAppDispatch: () => dispatchMock,
   };
 });
 
@@ -27,7 +37,7 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return ({ children }: { children: ReactNode }) => (
+  return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <AppProvider>{children}</AppProvider>
     </QueryClientProvider>
@@ -43,29 +53,43 @@ describe("AppSidebar", () => {
     expect(screen.getByText("Trash")).toBeInTheDocument();
   });
 
-  it("marks Favorites, Recent, Trash as disabled", () => {
+  it("navigates to folders when clicked", () => {
     render(<AppSidebar />, { wrapper: createWrapper() });
-    expect(screen.getByText("Favorites").closest("button")).toBeDisabled();
-    expect(screen.getByText("Recent").closest("button")).toBeDisabled();
-    expect(screen.getByText("Trash").closest("button")).toBeDisabled();
+
+    fireEvent.click(screen.getByText("Favorites"));
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "SET_ACTIVE_FOLDER",
+      folder: "favorites",
+    });
+
+    fireEvent.click(screen.getByText("Recent"));
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "SET_ACTIVE_FOLDER",
+      folder: "recent",
+    });
+
+    fireEvent.click(screen.getByText("Trash"));
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "SET_ACTIVE_FOLDER",
+      folder: "trash",
+    });
   });
 
   it("renders Ollama status section", () => {
     render(<AppSidebar />, { wrapper: createWrapper() });
-    expect(screen.getByText(/Ollama/)).toBeInTheDocument();
+    expect(screen.getByText("Ollama AI")).toBeInTheDocument();
   });
 
   it("renders Ollama AI label with hover Settings text", () => {
     render(<AppSidebar />, { wrapper: createWrapper() });
-    expect(screen.getByText("Ollama AI")).toBeInTheDocument();
+    // Text should be present (hidden or visible)
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
   it("opens settings when model card is clicked", () => {
-    mockDispatch.mockClear();
     render(<AppSidebar />, { wrapper: createWrapper() });
     fireEvent.click(screen.getByTestId("model-card"));
-    expect(mockDispatch).toHaveBeenCalledWith({
+    expect(dispatchMock).toHaveBeenCalledWith({
       type: "SET_SETTINGS_OPEN",
       open: true,
     });

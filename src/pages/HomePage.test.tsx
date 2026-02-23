@@ -5,8 +5,14 @@ import type { ReactNode } from "react";
 import { HomePage } from "./HomePage";
 import type { SnippetSummary, Snippet, Tag } from "@/lib/types";
 
+// Mock Tauri invoke
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
+}));
+
+// Mock CodeEditor to avoid CodeMirror issues in jsdom
+vi.mock("@/components/editor/CodeEditor", () => ({
+  CodeEditor: () => <div data-testid="code-editor-mock" />,
 }));
 
 import { invoke } from "@tauri-apps/api/core";
@@ -26,6 +32,10 @@ const mockSummaries: SnippetSummary[] = [
     codePreview: null,
     tags: [mockTags[0]],
     createdAt: "2026-02-09",
+    isFavorite: false,
+    isDeleted: false,
+    deletedAt: null,
+    lastAccessedAt: null,
   },
   {
     id: "s2",
@@ -35,6 +45,10 @@ const mockSummaries: SnippetSummary[] = [
     codePreview: null,
     tags: [mockTags[1]],
     createdAt: "2026-02-09",
+    isFavorite: false,
+    isDeleted: false,
+    deletedAt: null,
+    lastAccessedAt: null,
   },
 ];
 
@@ -49,6 +63,10 @@ const mockSnippet: Snippet = {
   tags: [mockTags[0]],
   createdAt: "2026-02-09",
   updatedAt: "2026-02-09",
+  isFavorite: false,
+  isDeleted: false,
+  deletedAt: null,
+  lastAccessedAt: null,
 };
 
 function createWrapper() {
@@ -58,6 +76,7 @@ function createWrapper() {
       mutations: { retry: false },
     },
   });
+  // eslint-disable-next-line react/display-name
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -70,6 +89,9 @@ function renderHomePage() {
 describe("HomePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock window.confirm
+    window.confirm = vi.fn(() => true);
+
     // Default mocks: list_snippets, list_tags
     mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "list_snippets") return Promise.resolve(mockSummaries);
@@ -80,6 +102,7 @@ describe("HomePage", () => {
       if (cmd === "update_snippet") return Promise.resolve(mockSnippet);
       if (cmd === "delete_snippet") return Promise.resolve(undefined);
       if (cmd === "check_ollama_connection") return Promise.resolve(false);
+      if (cmd === "get_settings") return Promise.resolve({});
       return Promise.resolve(undefined);
     });
   });
@@ -109,7 +132,9 @@ describe("HomePage", () => {
     });
 
     fireEvent.click(screen.getByText("New Snippet"));
-    expect(screen.getByText("New Snippet", { selector: "h2" })).toBeInTheDocument();
+    expect(
+      screen.getByText("New Snippet", { selector: "h2" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Title *")).toBeInTheDocument();
   });
 
@@ -202,9 +227,9 @@ describe("HomePage", () => {
 
     // Confirm in the AlertDialog
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Move to Trash" })).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith("delete_snippet", { id: "s1" });
@@ -215,15 +240,15 @@ describe("HomePage", () => {
     mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "list_snippets") return Promise.resolve([]);
       if (cmd === "list_tags") return Promise.resolve([]);
+      if (cmd === "check_ollama_connection") return Promise.resolve(false);
+      if (cmd === "get_settings") return Promise.resolve({});
       return Promise.resolve(undefined);
     });
 
     renderHomePage();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("No snippets yet"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("No snippets yet")).toBeInTheDocument();
     });
   });
 });

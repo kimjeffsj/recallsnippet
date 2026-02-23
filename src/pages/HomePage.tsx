@@ -10,6 +10,8 @@ import {
   useCreateSnippet,
   useUpdateSnippet,
   useDeleteSnippet,
+  usePermanentDeleteSnippet,
+  useRestoreSnippet,
 } from "@/hooks/useSnippets";
 import { useTags } from "@/hooks/useTags";
 import {
@@ -18,23 +20,37 @@ import {
   useAppDispatch,
 } from "@/contexts/AppContext";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import type { CreateSnippetInput, SnippetContext } from "@/lib/types";
+import type {
+  CreateSnippetInput,
+  SnippetContext,
+  SnippetFilter,
+} from "@/lib/types";
 
 function HomeContent() {
-  const { view, selectedId, filterLanguage } = useAppState();
+  const { view, selectedId, filterLanguage, activeFolder } = useAppState();
   const dispatch = useAppDispatch();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const [spotlightContext, setSpotlightContext] = useState<SnippetContext | undefined>();
+  const [spotlightContext, setSpotlightContext] = useState<
+    SnippetContext | undefined
+  >();
 
-  const { data: snippets = [], isLoading: snippetsLoading } = useSnippets(
-    filterLanguage ? { language: filterLanguage } : undefined,
-  );
+  const filter: SnippetFilter = {
+    language: filterLanguage,
+    favoritesOnly: activeFolder === "favorites" ? true : undefined,
+    trashOnly: activeFolder === "trash" ? true : undefined,
+    recentFirst: activeFolder === "recent" ? true : undefined,
+  };
+
+  const { data: snippets = [], isLoading: snippetsLoading } =
+    useSnippets(filter);
   const { data: selectedSnippet } = useSnippet(selectedId);
   const { data: tags = [] } = useTags();
 
   const createMutation = useCreateSnippet();
   const updateMutation = useUpdateSnippet();
   const deleteMutation = useDeleteSnippet();
+  const permanentDeleteMutation = usePermanentDeleteSnippet();
+  const restoreMutation = useRestoreSnippet();
 
   const handleSelect = (id: string) => {
     dispatch({ type: "SELECT_SNIPPET", id });
@@ -61,7 +77,31 @@ function HomeContent() {
   };
 
   const handleDelete = (id: string) => {
-    deleteMutation.mutate(id, {
+    if (activeFolder === "trash") {
+      if (
+        window.confirm(
+          "Are you sure you want to permanently delete this snippet? This action cannot be undone.",
+        )
+      ) {
+        permanentDeleteMutation.mutate(id, {
+          onSuccess: () => {
+            dispatch({ type: "DESELECT_SNIPPET" });
+          },
+        });
+      }
+    } else {
+      if (window.confirm("Are you sure you want to move this snippet to trash?")) {
+        deleteMutation.mutate(id, {
+          onSuccess: () => {
+            dispatch({ type: "DESELECT_SNIPPET" });
+          },
+        });
+      }
+    }
+  };
+
+  const handleRestore = (id: string) => {
+    restoreMutation.mutate(id, {
       onSuccess: () => {
         dispatch({ type: "DESELECT_SNIPPET" });
       },
@@ -134,6 +174,7 @@ function HomeContent() {
             snippet={selectedSnippet}
             onEdit={() => dispatch({ type: "SET_VIEW", view: "edit" })}
             onDelete={handleDelete}
+            onRestore={handleRestore}
             onBack={handleBack}
             onAskAI={() =>
               openSpotlight({

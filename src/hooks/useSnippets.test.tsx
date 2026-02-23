@@ -39,6 +39,10 @@ const mockSummary: SnippetSummary = {
   codePreview: null,
   tags: [{ id: "t1", name: "rust" }],
   createdAt: "2026-02-07",
+  isFavorite: false,
+  isDeleted: false,
+  deletedAt: null,
+  lastAccessedAt: null,
 };
 
 const mockSnippet: Snippet = {

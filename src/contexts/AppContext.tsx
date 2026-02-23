@@ -7,12 +7,14 @@ import {
 } from "react";
 
 export type View = "list" | "create" | "edit" | "detail" | "search";
+export type Folder = "library" | "favorites" | "recent" | "trash";
 
 interface AppState {
   view: View;
   selectedId: string | null;
   searchQuery: string;
   filterLanguage: string | undefined;
+  activeFolder: Folder;
   sidebarCollapsed: boolean;
   settingsOpen: boolean;
 }
@@ -23,6 +25,7 @@ type AppAction =
   | { type: "DESELECT_SNIPPET" }
   | { type: "SET_SEARCH_QUERY"; query: string }
   | { type: "SET_FILTER_LANGUAGE"; language: string | undefined }
+  | { type: "SET_ACTIVE_FOLDER"; folder: Folder }
   | { type: "TOGGLE_SIDEBAR" }
   | { type: "SET_SETTINGS_OPEN"; open: boolean }
   | { type: "NAVIGATE_TO_CREATE" }
@@ -33,6 +36,7 @@ const initialState: AppState = {
   selectedId: null,
   searchQuery: "",
   filterLanguage: undefined,
+  activeFolder: "library",
   sidebarCollapsed: false,
   settingsOpen: false,
 };
@@ -49,6 +53,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, searchQuery: action.query };
     case "SET_FILTER_LANGUAGE":
       return { ...state, filterLanguage: action.language };
+    case "SET_ACTIVE_FOLDER":
+      return {
+        ...state,
+        activeFolder: action.folder,
+        view: "list",
+        selectedId: null,
+        searchQuery: "",
+        filterLanguage: undefined,
+      };
     case "TOGGLE_SIDEBAR":
       return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
     case "SET_SETTINGS_OPEN":

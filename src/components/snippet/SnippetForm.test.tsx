@@ -70,6 +70,10 @@ describe("SnippetForm", () => {
       tags: [{ id: "t1", name: "rust" }],
       createdAt: "2026-02-07",
       updatedAt: "2026-02-07",
+      isFavorite: false,
+      isDeleted: false,
+      deletedAt: null,
+      lastAccessedAt: null,
     };
 
     renderForm({ snippet });

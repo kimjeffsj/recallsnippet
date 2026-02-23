@@ -89,8 +89,6 @@ function renderHomePage() {
 describe("HomePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock window.confirm
-    window.confirm = vi.fn(() => true);
 
     // Default mocks: list_snippets, list_tags
     mockInvoke.mockImplementation((cmd: string) => {

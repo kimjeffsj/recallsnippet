@@ -78,25 +78,17 @@ function HomeContent() {
 
   const handleDelete = (id: string) => {
     if (activeFolder === "trash") {
-      if (
-        window.confirm(
-          "Are you sure you want to permanently delete this snippet? This action cannot be undone.",
-        )
-      ) {
-        permanentDeleteMutation.mutate(id, {
-          onSuccess: () => {
-            dispatch({ type: "DESELECT_SNIPPET" });
-          },
-        });
-      }
+      permanentDeleteMutation.mutate(id, {
+        onSuccess: () => {
+          dispatch({ type: "DESELECT_SNIPPET" });
+        },
+      });
     } else {
-      if (window.confirm("Are you sure you want to move this snippet to trash?")) {
-        deleteMutation.mutate(id, {
-          onSuccess: () => {
-            dispatch({ type: "DESELECT_SNIPPET" });
-          },
-        });
-      }
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          dispatch({ type: "DESELECT_SNIPPET" });
+        },
+      });
     }
   };
 

@@ -33,6 +33,7 @@ impl Database {
     }
 
     /// Create an in-memory database (for testing)
+    #[allow(dead_code)]
     pub fn new_in_memory() -> Result<Self, rusqlite::Error> {
         let conn = Connection::open_in_memory()?;
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
@@ -77,9 +78,8 @@ mod tests {
         let db = Database::new_in_memory().unwrap();
 
         let result = db.with_connection(|conn| {
-            let mut stmt = conn.prepare(
-                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")?;
 
             let tables: Vec<String> = stmt
                 .query_map([], |row| row.get(0))?
@@ -100,9 +100,11 @@ mod tests {
     fn test_foreign_keys_enabled() {
         let db = Database::new_in_memory().unwrap();
 
-        let fk_enabled = db.with_connection(|conn| {
-            conn.query_row("PRAGMA foreign_keys", [], |row| row.get::<_, i32>(0))
-        }).unwrap();
+        let fk_enabled = db
+            .with_connection(|conn| {
+                conn.query_row("PRAGMA foreign_keys", [], |row| row.get::<_, i32>(0))
+            })
+            .unwrap();
 
         assert_eq!(fk_enabled, 1);
     }

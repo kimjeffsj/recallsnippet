@@ -43,9 +43,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     }
   }, [settings]);
 
-  useEffect(() => {
-    if (open && isConnected) {
+  const loadModels = () => {
+    if (isConnected) {
       aiApi.listModels().then(setModels).catch(() => setModels([]));
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadModels();
     }
   }, [open, isConnected]);
 
@@ -136,16 +142,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </div>
             )}
 
-            {/* Connection Status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2.5 w-2.5 rounded-full ${
-                  isConnected ? "bg-green-500" : "bg-red-500"
-                }`}
-              />
-              <span className="text-sm text-muted-foreground">
-                Ollama {isConnected ? "Connected" : "Disconnected"}
-              </span>
+            {/* Connection Status & Refresh */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      isConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Ollama {isConnected ? "Connected" : "Disconnected"}
+                  </span>
+                </div>
+                {isConnected && (
+                  <Button variant="ghost" size="sm" onClick={loadModels} className="h-6 px-2 text-xs">
+                    Refresh Models
+                  </Button>
+                )}
+              </div>
+
+              {isConnected && models.length === 0 && (
+                 <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400">
+                   <p className="font-semibold">No models found in Ollama</p>
+                   <p className="mt-1">
+                     Open Terminal and run the following commands to install:
+                     <br />
+                     <code className="mt-1 block text-xs font-mono bg-yellow-500/20 px-1.5 py-1 rounded">ollama pull qwen2.5-coder:7b</code>
+                     <code className="mt-1 block text-xs font-mono bg-yellow-500/20 px-1.5 py-1 rounded">ollama pull nomic-embed-text</code>
+                   </p>
+                 </div>
+              )}
             </div>
 
             {/* Ollama URL */}
@@ -182,9 +209,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       {model}
                     </SelectItem>
                   ))}
-                  {models.length === 0 && (
-                    <SelectItem value={settings?.llmModel ?? "qwen2.5-coder:7b"}>
-                      {settings?.llmModel ?? "qwen2.5-coder:7b"}
+                  {settings && !models.includes(settings.llmModel) && (
+                    <SelectItem value={settings.llmModel}>
+                      {settings.llmModel} (Not installed)
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -209,11 +236,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       {model}
                     </SelectItem>
                   ))}
-                  {models.length === 0 && (
-                    <SelectItem
-                      value={settings?.embeddingModel ?? "nomic-embed-text"}
-                    >
-                      {settings?.embeddingModel ?? "nomic-embed-text"}
+                  {settings && !models.includes(settings.embeddingModel) && (
+                    <SelectItem value={settings.embeddingModel}>
+                      {settings.embeddingModel} (Not installed)
                     </SelectItem>
                   )}
                 </SelectContent>

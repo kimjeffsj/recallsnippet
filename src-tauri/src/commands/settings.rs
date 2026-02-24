@@ -84,7 +84,7 @@ pub fn update_settings(
 #[cfg(test)]
 mod tests {
     use crate::db::Database;
-    use crate::models::{Settings, UpdateSettingsInput};
+    use crate::models::Settings;
 
     fn setup_db() -> Database {
         Database::new_in_memory().unwrap()

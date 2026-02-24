@@ -1,8 +1,6 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_OLLAMA_BASE_URL: &str = "http://localhost:11434";
-
 #[derive(Serialize)]
 struct EmbeddingRequest {
     model: String,
@@ -143,6 +141,8 @@ pub async fn create_embedding(text: &str, model: &str, base_url: &str) -> Result
 mod tests {
     use super::*;
 
+    const DEFAULT_OLLAMA_BASE_URL: &str = "http://localhost:11434";
+
     #[tokio::test]
     async fn test_check_connection() {
         // This test will pass whether Ollama is running or not
@@ -154,7 +154,9 @@ mod tests {
     #[tokio::test]
     async fn test_list_models_when_ollama_not_running() {
         // If Ollama is not running, this should return an error
-        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL)
+            .await
+            .unwrap_or(false);
         if !connected {
             let result = list_models(DEFAULT_OLLAMA_BASE_URL).await;
             assert!(result.is_err());
@@ -163,7 +165,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_models_when_ollama_running() {
-        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL)
+            .await
+            .unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
@@ -175,14 +179,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_embedding() {
-        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL)
+            .await
+            .unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
         }
 
         let text = "Docker container networking issue";
-        let embedding = create_embedding(text, "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL).await.unwrap();
+        let embedding = create_embedding(text, "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
+            .await
+            .unwrap();
 
         // nomic-embed-text produces 768-dimensional embeddings
         assert_eq!(embedding.len(), 768);
@@ -191,21 +199,35 @@ mod tests {
 
     #[tokio::test]
     async fn test_similar_texts_have_higher_similarity() {
-        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL).await.unwrap_or(false);
+        let connected = check_connection(DEFAULT_OLLAMA_BASE_URL)
+            .await
+            .unwrap_or(false);
         if !connected {
             eprintln!("Skipping test: Ollama not running");
             return;
         }
 
-        let emb1 = create_embedding("How to fix Docker network issue", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
-            .await
-            .unwrap();
-        let emb2 = create_embedding("Docker container networking problem", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
-            .await
-            .unwrap();
-        let emb3 = create_embedding("Best pizza recipes for dinner", "nomic-embed-text", DEFAULT_OLLAMA_BASE_URL)
-            .await
-            .unwrap();
+        let emb1 = create_embedding(
+            "How to fix Docker network issue",
+            "nomic-embed-text",
+            DEFAULT_OLLAMA_BASE_URL,
+        )
+        .await
+        .unwrap();
+        let emb2 = create_embedding(
+            "Docker container networking problem",
+            "nomic-embed-text",
+            DEFAULT_OLLAMA_BASE_URL,
+        )
+        .await
+        .unwrap();
+        let emb3 = create_embedding(
+            "Best pizza recipes for dinner",
+            "nomic-embed-text",
+            DEFAULT_OLLAMA_BASE_URL,
+        )
+        .await
+        .unwrap();
 
         let sim_1_2 = cosine_similarity(&emb1, &emb2);
         let sim_1_3 = cosine_similarity(&emb1, &emb3);

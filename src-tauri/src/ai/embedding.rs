@@ -1,8 +1,6 @@
 use crate::db::Database;
 use crate::models::Snippet;
 
-pub const DEFAULT_EMBEDDING_MODEL: &str = "nomic-embed-text";
-
 /// Prepare text for embedding by combining snippet fields.
 /// Title is repeated for higher weight.
 pub fn prepare_text(snippet: &Snippet) -> String {
@@ -37,22 +35,15 @@ pub fn save_embedding(
 }
 
 /// Generate and save embedding for a snippet (best-effort: silently skips if Ollama unavailable)
-pub async fn embed_snippet(db: &Database, snippet: &Snippet, embedding_model: &str, base_url: &str) -> Result<(), String> {
+pub async fn embed_snippet(
+    db: &Database,
+    snippet: &Snippet,
+    embedding_model: &str,
+    base_url: &str,
+) -> Result<(), String> {
     let text = prepare_text(snippet);
     let embedding = super::ollama::create_embedding(&text, embedding_model, base_url).await?;
     save_embedding(db, &snippet.id, &embedding, embedding_model)
-}
-
-/// Delete embedding for a snippet
-pub fn delete_embedding(db: &Database, snippet_id: &str) -> Result<(), String> {
-    db.with_connection(|conn| {
-        conn.execute(
-            "DELETE FROM embeddings WHERE snippet_id = ?1",
-            [snippet_id],
-        )?;
-        Ok(())
-    })
-    .map_err(|e| format!("Failed to delete embedding: {}", e))
 }
 
 #[cfg(test)]
@@ -81,7 +72,11 @@ mod tests {
 
     #[test]
     fn test_prepare_text_with_solution() {
-        let snippet = make_snippet("Docker error", "Container won't start", Some("Restart daemon"));
+        let snippet = make_snippet(
+            "Docker error",
+            "Container won't start",
+            Some("Restart daemon"),
+        );
         let text = prepare_text(&snippet);
 
         assert!(text.contains("Docker error"));
@@ -183,33 +178,5 @@ mod tests {
             })
             .unwrap();
         assert_eq!(model, "model-v2");
-    }
-
-    #[test]
-    fn test_delete_embedding() {
-        let db = Database::new_in_memory().unwrap();
-
-        db.with_connection(|conn| {
-            conn.execute(
-                "INSERT INTO snippets (id, title, problem) VALUES ('s1', 'Test', 'Problem')",
-                [],
-            )?;
-            Ok(())
-        })
-        .unwrap();
-
-        save_embedding(&db, "s1", &[1.0, 2.0], "model").unwrap();
-        delete_embedding(&db, "s1").unwrap();
-
-        let count: i32 = db
-            .with_connection(|conn| {
-                conn.query_row(
-                    "SELECT COUNT(*) FROM embeddings WHERE snippet_id = 's1'",
-                    [],
-                    |row| row.get(0),
-                )
-            })
-            .unwrap();
-        assert_eq!(count, 0);
     }
 }

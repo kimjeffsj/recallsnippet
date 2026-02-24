@@ -29,10 +29,7 @@ fn get_settings_internal(db: &Database) -> Settings {
     .unwrap_or_default()
 }
 
-fn fetch_tags_for_snippet(
-    db: &Database,
-    snippet_id: &str,
-) -> Result<Vec<Tag>, AppError> {
+fn fetch_tags_for_snippet(db: &Database, snippet_id: &str) -> Result<Vec<Tag>, AppError> {
     db.with_connection(|conn| {
         let mut stmt = conn.prepare(
             "SELECT t.id, t.name FROM tags t
@@ -125,7 +122,13 @@ pub async fn create_snippet(
 
     // Best-effort embedding: silently skip if Ollama is unavailable
     let settings = get_settings_internal(&db);
-    let _ = embedding::embed_snippet(&db, &snippet, &settings.embedding_model, &settings.ollama_base_url).await;
+    let _ = embedding::embed_snippet(
+        &db,
+        &snippet,
+        &settings.embedding_model,
+        &settings.ollama_base_url,
+    )
+    .await;
 
     Ok(snippet)
 }
@@ -245,7 +248,8 @@ pub async fn update_snippet(
     fetch_snippet_by_id(&db, &id).map_err(String::from)?;
 
     // Check if content fields changed (triggers re-embedding)
-    let needs_reembed = input.title.is_some() || input.problem.is_some() || input.solution.is_some();
+    let needs_reembed =
+        input.title.is_some() || input.problem.is_some() || input.solution.is_some();
 
     db.with_connection(|conn| {
         let mut sets = vec![];
@@ -280,10 +284,7 @@ pub async fn update_snippet(
             sets.push("updated_at = CURRENT_TIMESTAMP");
             params.push(Box::new(id.clone()));
 
-            let sql = format!(
-                "UPDATE snippets SET {} WHERE id = ?",
-                sets.join(", ")
-            );
+            let sql = format!("UPDATE snippets SET {} WHERE id = ?", sets.join(", "));
 
             let param_refs: Vec<&dyn rusqlite::types::ToSql> =
                 params.iter().map(|p| p.as_ref()).collect();
@@ -292,10 +293,7 @@ pub async fn update_snippet(
 
         // Update tags if provided
         if let Some(ref tag_ids) = input.tag_ids {
-            conn.execute(
-                "DELETE FROM snippet_tags WHERE snippet_id = ?1",
-                [&id],
-            )?;
+            conn.execute("DELETE FROM snippet_tags WHERE snippet_id = ?1", [&id])?;
             for tag_id in tag_ids {
                 conn.execute(
                     "INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (?1, ?2)",
@@ -313,7 +311,13 @@ pub async fn update_snippet(
     // Re-embed if content fields changed
     if needs_reembed {
         let settings = get_settings_internal(&db);
-        let _ = embedding::embed_snippet(&db, &snippet, &settings.embedding_model, &settings.ollama_base_url).await;
+        let _ = embedding::embed_snippet(
+            &db,
+            &snippet,
+            &settings.embedding_model,
+            &settings.ollama_base_url,
+        )
+        .await;
     }
 
     Ok(snippet)
@@ -388,7 +392,7 @@ mod tests {
     fn setup_db() -> Database {
         let db = Database::new_in_memory().unwrap();
         // Run all migrations to include metadata columns
-        
+
         db.with_connection(|conn| {
             conn.execute(
                 "INSERT INTO tags (id, name) VALUES ('tag-rust', 'rust')",
@@ -446,7 +450,14 @@ mod tests {
             conn.execute(
                 "INSERT INTO snippets (id, title, problem, solution, code, code_language)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                rusqlite::params![id, "Test Title", "Test Problem", "Test Solution", "fn main() {}", "rust"],
+                rusqlite::params![
+                    id,
+                    "Test Title",
+                    "Test Problem",
+                    "Test Solution",
+                    "fn main() {}",
+                    "rust"
+                ],
             )?;
             conn.execute(
                 "INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (?1, ?2)",
@@ -730,12 +741,13 @@ mod tests {
                 [&id],
             )?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // Then
         let snippet = fetch_snippet(&db, &id).unwrap();
         assert_eq!(snippet.is_favorite, true);
-        
+
         // Toggle back
         db.with_connection(|conn| {
             conn.execute(
@@ -743,7 +755,8 @@ mod tests {
                 [&id],
             )?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
         let snippet = fetch_snippet(&db, &id).unwrap();
         assert_eq!(snippet.is_favorite, false);
     }
@@ -754,15 +767,23 @@ mod tests {
         let db = setup_db();
         let id = create_test_snippet(&db, "Restore Me", &[]);
         db.with_connection(|conn| {
-            conn.execute("UPDATE snippets SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?1", [&id])?;
+            conn.execute(
+                "UPDATE snippets SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+                [&id],
+            )?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // When - restore
         db.with_connection(|conn| {
-            conn.execute("UPDATE snippets SET is_deleted = 0, deleted_at = NULL WHERE id = ?1", [&id])?;
+            conn.execute(
+                "UPDATE snippets SET is_deleted = 0, deleted_at = NULL WHERE id = ?1",
+                [&id],
+            )?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // Then
         let snippet = fetch_snippet(&db, &id).unwrap();
@@ -775,13 +796,14 @@ mod tests {
         // Given
         let db = setup_db();
         let id1 = create_test_snippet(&db, "Fav", &[]);
-        let id2 = create_test_snippet(&db, "Normal", &[]);
+        let _id2 = create_test_snippet(&db, "Normal", &[]);
 
         // Mark id1 as favorite
         db.with_connection(|conn| {
             conn.execute("UPDATE snippets SET is_favorite = 1 WHERE id = ?1", [&id1])?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // When
         let result = super::list_snippets_internal(
@@ -790,7 +812,8 @@ mod tests {
                 favorites_only: Some(true),
                 ..Default::default()
             }),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Then
         assert_eq!(result.len(), 1);
@@ -802,19 +825,17 @@ mod tests {
         // Given
         let db = setup_db();
         let id1 = create_test_snippet(&db, "Deleted", &[]);
-        let id2 = create_test_snippet(&db, "Active", &[]);
+        let _id2 = create_test_snippet(&db, "Active", &[]);
 
         // Soft delete id1
         db.with_connection(|conn| {
             conn.execute("UPDATE snippets SET is_deleted = 1 WHERE id = ?1", [&id1])?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // When - list active (default)
-        let result_active = super::list_snippets_internal(
-            &db,
-            None,
-        ).unwrap();
+        let result_active = super::list_snippets_internal(&db, None).unwrap();
         assert_eq!(result_active.len(), 1);
         assert_eq!(result_active[0].title, "Active");
 
@@ -825,7 +846,8 @@ mod tests {
                 trash_only: Some(true),
                 ..Default::default()
             }),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(result_trash.len(), 1);
         assert_eq!(result_trash[0].title, "Deleted");
     }
@@ -839,10 +861,17 @@ mod tests {
 
         // Set last_accessed_at manually
         db.with_connection(|conn| {
-            conn.execute("UPDATE snippets SET last_accessed_at = '2020-01-01 00:00:00' WHERE id = ?1", [&id1])?;
-            conn.execute("UPDATE snippets SET last_accessed_at = '2025-01-01 00:00:00' WHERE id = ?1", [&id2])?;
+            conn.execute(
+                "UPDATE snippets SET last_accessed_at = '2020-01-01 00:00:00' WHERE id = ?1",
+                [&id1],
+            )?;
+            conn.execute(
+                "UPDATE snippets SET last_accessed_at = '2025-01-01 00:00:00' WHERE id = ?1",
+                [&id2],
+            )?;
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
         // When
         let result = super::list_snippets_internal(
@@ -851,7 +880,8 @@ mod tests {
                 recent_first: Some(true),
                 ..Default::default()
             }),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Then
         assert_eq!(result.len(), 2);

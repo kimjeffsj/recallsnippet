@@ -10,6 +10,20 @@ RecallSnippet is a modern, privacy-focused desktop application built with **Taur
 ![React](https://img.shields.io/badge/React-v19-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.93-brown.svg)
 
+<br/>
+
+<div align="center">
+  <img src="public/dashboard.png" alt="RecallSnippet Dashboard" width="800" />
+  <p><em>Main Dashboard & Snippet Search</em></p>
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="public/note-detail.png" alt="RecallSnippet Note Detail" width="800" />
+  <p><em>Note Detail & AI Auto Tagging</em></p>
+</div>
+
 ---
 
 ## ✨ Features

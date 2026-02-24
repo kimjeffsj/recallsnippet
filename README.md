@@ -46,7 +46,7 @@ RecallSnippet is a modern, privacy-focused desktop application built with **Taur
 ## Architecture
 ```mermaid
 graph TD
-    subgraph Frontend [Frontend (React + Tauri)]
+    subgraph Frontend ["Frontend (React + Tauri)"]
         UI[User Interface<br>React/Tailwind/shadcn]
         State[State Management<br>TanStack Query]
         Editor[Code Editor<br>CodeMirror 6]
@@ -55,7 +55,7 @@ graph TD
         UI --> Editor
     end
 
-    subgraph Backend [Backend (Rust Core)]
+    subgraph Backend ["Backend (Rust Core)"]
         TauriAPI[Tauri Commands API]
         DBSync[SQLite Manager]
         VectorSearch[Vector Search Engine<br>Cosine Similarity]
@@ -66,7 +66,7 @@ graph TD
         TauriAPI --> AIClient
     end
 
-    subgraph LocalData [Local Storage & AI]
+    subgraph LocalData ["Local Storage & AI"]
         SQLite[(SQLite Database<br>Snippets & Embeddings)]
         Ollama[Local LLM<br>Ollama]
         ModelEmbed[Embedding Model<br>nomic-embed-text]

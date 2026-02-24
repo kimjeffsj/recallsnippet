@@ -43,6 +43,51 @@ RecallSnippet is a modern, privacy-focused desktop application built with **Taur
 
 ---
 
+## Architecture
+```mermaid
+graph TD
+    subgraph Frontend [Frontend (React + Tauri)]
+        UI[User Interface<br>React/Tailwind/shadcn]
+        State[State Management<br>TanStack Query]
+        Editor[Code Editor<br>CodeMirror 6]
+        
+        UI --> State
+        UI --> Editor
+    end
+
+    subgraph Backend [Backend (Rust Core)]
+        TauriAPI[Tauri Commands API]
+        DBSync[SQLite Manager]
+        VectorSearch[Vector Search Engine<br>Cosine Similarity]
+        AIClient[AI Client<br>Ollama API]
+        
+        TauriAPI --> DBSync
+        TauriAPI --> VectorSearch
+        TauriAPI --> AIClient
+    end
+
+    subgraph LocalData [Local Storage & AI]
+        SQLite[(SQLite Database<br>Snippets & Embeddings)]
+        Ollama[Local LLM<br>Ollama]
+        ModelEmbed[Embedding Model<br>nomic-embed-text]
+        ModelChat[Chat Model<br>qwen2.5-coder:7b]
+        
+        Ollama --> ModelEmbed
+        Ollama --> ModelChat
+    end
+
+    %% Data Flow
+    State <-->|IPC Calls| TauriAPI
+    DBSync <-->|Read/Write| SQLite
+    VectorSearch <-->|Query Vectors| SQLite
+    AIClient <-->|HTTP REST| Ollama
+    
+    %% User Interaction
+    User((User)) -->|Search/Save| UI
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -114,7 +159,7 @@ Go to **Settings** (gear icon) and ensure Ollama is connected.
 - Use the search bar (⌘K) to find snippets.
 - Try searching with natural language (e.g., "how to parse json in python"). The semantic search will surface relevant code even if keywords don't match exactly.
 
----
+--- 
 
 ## 🏗️ Project Structure
 

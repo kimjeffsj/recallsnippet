@@ -14,14 +14,14 @@ RecallSnippet is a modern, privacy-focused desktop application built with **Taur
 
 <div align="center">
   <img src="public/dashboard.png" alt="RecallSnippet Dashboard" width="800" />
-  <p><em>Main Dashboard & Snippet Search</em></p>
+  <p><em>Main Dashboard</em></p>
 </div>
 
 <br/>
 
 <div align="center">
   <img src="public/note-detail.png" alt="RecallSnippet Note Detail" width="800" />
-  <p><em>Note Detail & AI Auto Tagging</em></p>
+  <p><em>Note Detail</em></p>
 </div>
 
 ---
